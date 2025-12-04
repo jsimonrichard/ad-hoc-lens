@@ -1,6 +1,7 @@
 import streamlit as st
 import duckdb
 import tempfile
+import numpy as np
 
 
 # Register a custom markdown() function in DuckDB
@@ -157,8 +158,12 @@ def render_df(df):
                         st.markdown("```\n" + value + "\n```")
                     else:
                         st.write(f"**{col}:** `", value, "`")
-                elif isinstance(value, list) or isinstance(value, dict):
-                    st.write(f"**{col}:** ", value)
+                elif isinstance(value, list):
+                    st.write(f"**{col}:**")
+                    st.json(value)
+                elif isinstance(value, np.ndarray):
+                    st.write(f"**{col}:**")
+                    st.json(value.tolist())
                 else:
                     st.write(f"**{col}:** ", value)
 
