@@ -206,10 +206,8 @@ def main():
         else:
             st.warning("Please enter a name before saving.")
 
+    # Only run the query when the button is clicked
     if st.button("Run Query"):
-        st.rerun()
-
-    if query:
         res = make_query(query, table_name)
 
         if isinstance(res, Exception):
