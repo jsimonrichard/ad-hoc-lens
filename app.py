@@ -21,9 +21,9 @@ DEFAULT_QUERIES = [
     {"name": "Select All", "query": "SELECT * FROM $data"},
     {"name": "Count", "query": "SELECT COUNT(*) FROM $data"},
     {
-        "name": "Render Markdown (Template)",
+        "name": "Render Resolved Issues Markdown from Rayon Dataset",
         "query": """
-SELECT markdown(item.body) AS rendered
+SELECT markdown('# ' || item.title), markdown(item.body) AS rendered
 FROM $data, UNNEST(resolved_issues) AS t(item);
 """.strip(),
     },
@@ -39,6 +39,12 @@ def init_session():
         # Initialize session state for saved queries
         st.session_state.queries = DEFAULT_QUERIES
 
+        # Add default dataset
+        add_data_source_from_file(
+            "rayon-rs__rayon_dataset.jsonl",
+            "example/rayon-rs__rayon_dataset.jsonl",
+        )
+
 
 def get_next_table_name(base="table"):
     existing = set(row[0] for row in con().execute("SHOW TABLES").fetchall())
@@ -53,6 +59,25 @@ def get_next_pasted_entry_name():
         st.session_state.pasted_entry_count = 0
     st.session_state.pasted_entry_count += 1
     return f"Pasted Entry {st.session_state.pasted_entry_count}"
+
+
+def add_data_source_from_file(name: str, file_path: str):
+    """Helper to add a data source directly from a JSONL file path."""
+    table_name = get_next_table_name()
+    con().execute(
+        f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_path}')"
+    )
+    st.session_state.data_sources.append(
+        {"name": name, "path": file_path, "table_name": table_name}
+    )
+
+
+def add_data_source_from_text(name: str, data: str):
+    """Helper to add a data source from JSONL text content."""
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".jsonl", delete=False) as tmp:
+        tmp.write(data)
+        tmp_path = tmp.name
+    add_data_source_from_file(name, tmp_path)
 
 
 @st.dialog("➕ Add Data Source")
@@ -97,20 +122,7 @@ def add_data_source():
 
     # Insert new sources into database
     for record in records_to_add:
-        table_name = get_next_table_name()
-
-        # Insert JSON
-        tmp_path = None
-        with tempfile.NamedTemporaryFile(
-            mode="w+", suffix=".jsonl", delete=False
-        ) as tmp:
-            tmp.write(record["data"])
-            tmp_path = tmp.name
-        con().execute(
-            f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{tmp_path}')"
-        )
-
-        st.session_state.data_sources.append({**record, "table_name": table_name})
+        add_data_source_from_text(record["name"], record["data"])
 
     if records_to_add:
         st.success("Data source(s) added successfully!")
@@ -153,7 +165,6 @@ def render_df(df):
 
 def main():
     st.set_page_config(page_title="Ad Hoc Lens", layout="wide")
-    st.title("🔎 Ad Hoc Lens - DuckDB + Streamlit JSON(L) Explorer")
 
     st.sidebar.header("📂 Data Sources")
 
