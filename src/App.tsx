@@ -1,13 +1,8 @@
 import type { Component } from "solid-js";
-import { Button } from "@/components/ui/button";
+import Layout from "./components/Layout";
 
 const App: Component = () => {
-  return (
-    <>
-      <p class="text-4xl text-primary text-center py-20">Hello tailwind!</p>
-      <Button onClick={() => alert("asdf")}>Hello</Button>
-    </>
-  );
+  return <Layout />;
 };
 
 export default App;
