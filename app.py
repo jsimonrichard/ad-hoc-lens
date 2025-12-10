@@ -4,20 +4,6 @@ import tempfile
 import numpy as np
 
 
-# Register a custom markdown() function in DuckDB
-def markdown_func(s: str) -> str:
-    if s is None:
-        return None
-    return f"<markdown>{s}"
-
-
-@st.cache_resource  # 👈 Add the caching decorator
-def con():
-    con = duckdb.connect()
-    con.create_function("markdown", markdown_func)
-    return con
-
-
 DEFAULT_QUERIES = [
     {"name": "Select All", "query": "SELECT * FROM $data"},
     {"name": "Count", "query": "SELECT COUNT(*) FROM $data"},
@@ -31,6 +17,29 @@ FROM $data, UNNEST(resolved_issues) AS t(item);
 ]
 
 
+# Register a custom markdown() function in DuckDB
+def markdown_func(s: str) -> str:
+    if s is None:
+        return None
+    return f"<markdown>{s}"
+
+
+def con():
+    return st.session_state.con
+
+
+def init_con():
+    if "con" in st.session_state:
+        raise Exception("Connection already initialized")
+
+    # Create temp duckdb file
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".duckdb") as tmp:
+        tmp_path = tmp.name
+
+    st.session_state.con = duckdb.connect(tmp_path)
+    st.session_state.con.create_function("markdown", markdown_func)
+
+
 def init_session():
     if "sentinel" not in st.session_state:
         st.session_state.sentinel = True
@@ -39,6 +48,8 @@ def init_session():
 
         # Initialize session state for saved queries
         st.session_state.queries = DEFAULT_QUERIES
+
+        init_con()
 
         # Add default dataset
         add_data_source_from_file(
