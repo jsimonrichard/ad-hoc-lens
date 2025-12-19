@@ -7,16 +7,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { TextFieldRoot } from "@/components/ui/textfield";
 import { TextArea } from "@/components/ui/textarea";
-import { DataSourceButton } from "@/components/DataSourceButton";
+import { Sidebar } from "@/components/sidebar";
 
 interface DataSource {
   id: string;
   name: string;
 }
 
+interface SavedQuery {
+  id: string;
+  name: string;
+  content: string;
+}
+
 const mockDataSources: DataSource[] = [
   { id: "1", name: "rayon_dataset.jsonl" },
   { id: "2", name: "example_data.json" },
+];
+
+const mockSavedQueries: SavedQuery[] = [
+  {
+    id: "saved-1",
+    name: "Top 10 Records",
+    content: "SELECT * FROM data LIMIT 10",
+  },
+  {
+    id: "saved-2",
+    name: "Aggregate Statistics",
+    content: "SELECT COUNT(*) as total, AVG(value) as avg_value FROM dataset",
+  },
+  {
+    id: "saved-3",
+    name: "Filter by Date Range",
+    content:
+      "SELECT * FROM data WHERE date >= '2024-01-01' AND date <= '2024-12-31'",
+  },
+  {
+    id: "saved-4",
+    name: "Group by Category",
+    content:
+      "SELECT category, COUNT(*) as count FROM items GROUP BY category ORDER BY count DESC",
+  },
 ];
 
 export default function App() {
@@ -25,6 +56,8 @@ export default function App() {
     { id: "query1", name: "Query 1", content: "" },
   ]);
   const [dataSources, setDataSources] = createSignal(mockDataSources);
+  const [savedQueries, setSavedQueries] =
+    createSignal<SavedQuery[]>(mockSavedQueries);
 
   const addQuery = () => {
     const newId = `query${queries().length + 1}`;
@@ -35,32 +68,57 @@ export default function App() {
     setActiveTab(newId);
   };
 
-  const handleEditDataSource = (id: string) => {
-    // TODO: Implement edit functionality
-    console.log("Edit data source:", id);
+  const handleEditDataSource = (id: string, newName: string) => {
+    setDataSources(
+      dataSources().map((ds) => (ds.id === id ? { ...ds, name: newName } : ds))
+    );
   };
 
   const handleDeleteDataSource = (id: string) => {
     setDataSources(dataSources().filter((ds) => ds.id !== id));
   };
 
+  const handleAddDataSource = () => {
+    // TODO: Implement add data source functionality
+    console.log("Add data source");
+  };
+
+  const handleEditSavedQuery = (id: string, newName: string) => {
+    setSavedQueries(
+      savedQueries().map((q) => (q.id === id ? { ...q, name: newName } : q))
+    );
+  };
+
+  const handleDeleteSavedQuery = (id: string) => {
+    setSavedQueries(savedQueries().filter((q) => q.id !== id));
+  };
+
+  const handleAddSavedQuery = () => {
+    // TODO: Implement add saved query functionality
+    const newId = `saved-query-${savedQueries().length + 1}`;
+    setSavedQueries([
+      ...savedQueries(),
+      {
+        id: newId,
+        name: `Saved Query ${savedQueries().length + 1}`,
+        content: "",
+      },
+    ]);
+    console.log("Add saved query");
+  };
+
   return (
     <div class="flex h-screen bg-background text-foreground">
-      <aside class="w-64 border-r-2 border-accent p-4 flex flex-col">
-        <h2 class="text-lg font-semibold mb-4">Data Sources</h2>
-        <ul class="space-y-1">
-          <For each={dataSources()}>
-            {(ds) => (
-              <DataSourceButton
-                id={ds.id}
-                name={ds.name}
-                onEdit={handleEditDataSource}
-                onDelete={handleDeleteDataSource}
-              />
-            )}
-          </For>
-        </ul>
-      </aside>
+      <Sidebar
+        dataSources={dataSources()}
+        onEditDataSource={handleEditDataSource}
+        onDeleteDataSource={handleDeleteDataSource}
+        onAddDataSource={handleAddDataSource}
+        savedQueries={savedQueries()}
+        onEditSavedQuery={handleEditSavedQuery}
+        onDeleteSavedQuery={handleDeleteSavedQuery}
+        onAddSavedQuery={handleAddSavedQuery}
+      />
 
       <main class="flex-1 flex flex-col overflow-auto bg-background">
         <Tabs value={activeTab()} onChange={setActiveTab}>
