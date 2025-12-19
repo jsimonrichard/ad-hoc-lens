@@ -26,6 +26,7 @@ import {
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { SaveQueryDialog } from "@/components/SaveQueryDialog";
 import { CloseQueryDialog } from "@/components/CloseQueryDialog";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { Sidebar } from "@/components/sidebar";
 import { useStore } from "@/store";
 
@@ -34,6 +35,7 @@ export default function App() {
   const [editingTabId, setEditingTabId] = createSignal<string | null>(null);
   const [savingQueryId, setSavingQueryId] = createSignal<string | null>(null);
   const [closingQueryId, setClosingQueryId] = createSignal<string | null>(null);
+  const [showWelcomeDialog, setShowWelcomeDialog] = createSignal(false);
 
   const handleEditTab = (tabId: string) => {
     setEditingTabId(tabId);
@@ -120,15 +122,40 @@ export default function App() {
     }
   };
 
-  // Handle Ctrl+S keyboard shortcut
+  // Check if this is the first time opening the app
+  onMount(() => {
+    if (store.isFirstTime()) {
+      setShowWelcomeDialog(true);
+    }
+  });
+
+  const handleUseDemo = () => {
+    store.loadDemoState();
+    store.markFirstTimeComplete();
+  };
+
+  const handleStartEmpty = () => {
+    store.markFirstTimeComplete();
+  };
+
+  // Handle keyboard shortcuts
   onMount(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl+S (or Cmd+S on Mac)
+      // Check for Ctrl+S (or Cmd+S on Mac) - Save query
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         const activeTab = store.state.activeTab;
         if (activeTab) {
           handleSaveClick(activeTab);
+        }
+      }
+
+      // Check for Ctrl+Shift+R (or Cmd+Shift+R on Mac) - Reset state (dev only)
+      if (import.meta.env.DEV && (e.ctrlKey || e.metaKey) && e.key === ">") {
+        e.preventDefault();
+        if (confirm("Reset all state to defaults? This cannot be undone.")) {
+          store.resetState();
+          console.log("State reset to defaults");
         }
       }
     };
@@ -295,6 +322,12 @@ export default function App() {
             setClosingQueryId(open ? closingQueryId() : null)
           }
           onConfirm={handleConfirmClose}
+        />
+        <WelcomeDialog
+          open={showWelcomeDialog()}
+          onOpenChange={setShowWelcomeDialog}
+          onUseDemo={handleUseDemo}
+          onStartEmpty={handleStartEmpty}
         />
       </main>
     </div>

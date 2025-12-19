@@ -42,12 +42,25 @@ export interface StoreContextValue {
   addDataSource: (dataSource: DataSource) => void;
   updateDataSource: (id: string, updates: Partial<DataSource>) => void;
   deleteDataSource: (id: string) => void;
+  resetState: () => void;
+  loadDemoState: () => void;
+  isFirstTime: () => boolean;
+  markFirstTimeComplete: () => void;
 }
 
 const STORAGE_KEY = "ad-hoc-lens-state";
+const FIRST_TIME_KEY = "ad-hoc-lens-first-time";
 
-// Default initial state (non-reactive constant)
+// Empty default state (non-reactive constant)
 const defaultState: AppState = {
+  activeTab: undefined,
+  queries: [],
+  openQueryIds: [],
+  dataSources: [],
+};
+
+// Demo state with example values
+const demoState: AppState = {
   activeTab: "query1",
   queries: [
     {
@@ -105,6 +118,21 @@ function getNextUntitledName(savedQueries: Query[]): string {
   }
 
   return maxNum === 0 ? "Untitled" : `Untitled ${maxNum + 1}`;
+}
+
+// Check if this is the first time the app is opened
+export function isFirstTime(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return localStorage.getItem(FIRST_TIME_KEY) === null;
+}
+
+// Mark that the first time dialog has been shown
+export function markFirstTimeComplete(): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(FIRST_TIME_KEY, "false");
+  }
 }
 
 // Load state from localStorage (non-reactive helper function)
@@ -313,6 +341,31 @@ export const StoreProvider: Component<ParentProps> = (props) => {
       setState("dataSources", (dataSources) =>
         dataSources.filter((ds) => ds.id !== id)
       );
+    },
+
+    resetState: () => {
+      // Clear localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(FIRST_TIME_KEY);
+        // Reload the page to show the welcome dialog again
+        window.location.reload();
+      } else {
+        // Reset state to default (for SSR)
+        setState(defaultState);
+      }
+    },
+
+    loadDemoState: () => {
+      setState(demoState);
+    },
+
+    isFirstTime: () => {
+      return isFirstTime();
+    },
+
+    markFirstTimeComplete: () => {
+      markFirstTimeComplete();
     },
   };
 

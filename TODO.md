@@ -8,11 +8,12 @@
   - Drag-n-Drop tabs
   - Use codemirror for SQL editor
   - Markdown output view
+  - Drag-n-Drop table names (into codemirror editor)
 - Tutorial pop-up
 - Queries sidebar should scroll
 - No need for data source drop down
 - Create new `select * from ...` query when clicking on a data source
--
+- Make UI more compact
 
 ## DB stuff
 
@@ -20,7 +21,9 @@
 - Load tables into the DB, maintaining a map of table names
 - Use codemirror to provide autocomplete for the tables
 
-## Questions
+## Immediate
 
-- What's the best way to represent the data sources in the codemirror edito? `<table name>`, or maybe `@table-name`?
--
+- Way to reset state during dev
+- Dialog asking about starting with demo data
+- Way to retrieve demo data separately
+- Better demo data?
