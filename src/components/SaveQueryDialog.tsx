@@ -1,5 +1,10 @@
 import type { Component } from "solid-js";
-import { createSignal, createEffect } from "solid-js";
+import {
+  createSignal,
+  createEffect,
+  createContext,
+  useContext,
+} from "solid-js";
 import { Button } from "@/components/ui/button";
 import { TextFieldRoot, TextField } from "@/components/ui/textfield";
 import {
@@ -10,28 +15,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useGetUntitledName, useUpdateQuery } from "@/store/queries";
 
+// Context for save query dialog
 interface SaveQueryDialogProps {
-  open: boolean;
-  defaultName: string;
-  onOpenChange: (open: boolean) => void;
-  onSave: (name: string) => void;
+  saveQueryId: () => string | null;
+  setSaveQueryId: (id: string | null) => void;
 }
 
 export const SaveQueryDialog: Component<SaveQueryDialogProps> = (props) => {
-  const [queryName, setQueryName] = createSignal(props.defaultName);
+  const { saveQueryId, setSaveQueryId } = props;
+  const open = () => saveQueryId() !== null;
+  const getUntitledName = useGetUntitledName();
+  const [queryName, setQueryName] = createSignal("");
+  const updateQuery = useUpdateQuery();
 
   // Reset the query name when dialog opens with a new default name
   createEffect(() => {
-    if (props.open) {
-      setQueryName(props.defaultName);
+    if (open()) {
+      setQueryName(getUntitledName());
     }
   });
 
   const handleSave = () => {
     if (queryName().trim()) {
-      props.onSave(queryName().trim());
-      props.onOpenChange(false);
+      const queryId = saveQueryId();
+      if (queryId) {
+        updateQuery(queryId, { name: queryName().trim(), saved: true });
+        setSaveQueryId(null);
+      }
     }
   };
 
@@ -43,7 +55,10 @@ export const SaveQueryDialog: Component<SaveQueryDialogProps> = (props) => {
   };
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+    <Dialog
+      open={open()}
+      onOpenChange={(isOpen) => !isOpen && setSaveQueryId(null)}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Save Query</DialogTitle>
@@ -64,7 +79,7 @@ export const SaveQueryDialog: Component<SaveQueryDialogProps> = (props) => {
           </TextFieldRoot>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => props.onOpenChange(false)}>
+          <Button variant="outline" onClick={() => setSaveQueryId(null)}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={!queryName().trim()}>

@@ -1,4 +1,5 @@
 import type { Component } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,27 +9,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  isFirstTimeAppOpened,
+  markFirstTimeAppOpenedComplete,
+  useLoadDemoState,
+} from "@/store/start";
 
-interface WelcomeDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUseDemo: () => void;
-  onStartEmpty: () => void;
-}
+export const WelcomeDialog: Component = () => {
+  const [open, setOpen] = createSignal(false);
+  const loadDemoState = useLoadDemoState();
 
-export const WelcomeDialog: Component<WelcomeDialogProps> = (props) => {
+  // Check if this is the first time opening the app
+  onMount(() => {
+    if (isFirstTimeAppOpened()) {
+      setOpen(true);
+    }
+  });
+
   const handleUseDemo = () => {
-    props.onUseDemo();
-    props.onOpenChange(false);
+    loadDemoState();
+    markFirstTimeAppOpenedComplete();
+    setOpen(false);
   };
 
   const handleStartEmpty = () => {
-    props.onStartEmpty();
-    props.onOpenChange(false);
+    markFirstTimeAppOpenedComplete();
+    setOpen(false);
   };
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+    <Dialog open={open()} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Welcome to Ad-Hoc Lens</DialogTitle>

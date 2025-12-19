@@ -8,18 +8,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useCloseQueryTab, useQuery } from "@/store/queries";
 
+// Context for close query dialog
 interface CloseQueryDialogProps {
-  open: boolean;
-  queryName: string;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  closingQueryId: () => string | null;
+  setClosingQueryId: (id: string | null) => void;
 }
 
 export const CloseQueryDialog: Component<CloseQueryDialogProps> = (props) => {
+  const closeQueryTab = useCloseQueryTab();
+  const { closingQueryId, setClosingQueryId } = props;
+  const open = () => closingQueryId() !== null;
+
+  const query = useQuery(closingQueryId() ?? undefined);
+
   const handleConfirm = () => {
-    props.onConfirm();
-    props.onOpenChange(false);
+    const queryId = closingQueryId();
+    if (queryId) {
+      // This will delete the unsaved query completely
+      closeQueryTab(queryId);
+      setClosingQueryId(null);
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -30,17 +40,21 @@ export const CloseQueryDialog: Component<CloseQueryDialogProps> = (props) => {
   };
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+    <Dialog
+      open={open()}
+      onOpenChange={(isOpen) => !isOpen && setClosingQueryId(null)}
+    >
       <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>Close Unsaved Query</DialogTitle>
           <DialogDescription>
-            Are you sure you want to close <strong>"{props.queryName}"</strong>?
-            Your unsaved changes will be lost.
+            Are you sure you want to close{" "}
+            <strong>"{query()?.name || "Untitled"}"</strong>? Your unsaved
+            changes will be lost.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => props.onOpenChange(false)}>
+          <Button variant="outline" onClick={() => setClosingQueryId(null)}>
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleConfirm}>

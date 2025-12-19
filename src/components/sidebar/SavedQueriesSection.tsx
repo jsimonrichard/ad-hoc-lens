@@ -5,47 +5,39 @@ import { Button } from "@/components/ui/button";
 import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
-import { useStore } from "@/store";
+import {
+  useCreateUnsavedQuery,
+  useDeleteQuery,
+  useOpenQuery,
+  useQueries,
+  useQuery,
+  useUpdateQuery,
+} from "@/store/queries";
 
 export const SavedQueriesSection: Component = () => {
-  const store = useStore();
+  const queries = useQueries();
   const [editingId, setEditingId] = createSignal<string | null>(null);
   const [deletingId, setDeletingId] = createSignal<string | null>(null);
-
-  const handleEdit = (id: string) => {
-    setEditingId(id);
-  };
-
-  const handleDelete = (id: string) => {
-    setDeletingId(id);
-  };
+  const editingQuery = useQuery(editingId() ?? undefined);
+  const deletingQuery = useQuery(deletingId() ?? undefined);
+  const openQuery = useOpenQuery();
+  const createUnsavedQuery = useCreateUnsavedQuery();
+  const updateQuery = useUpdateQuery();
+  const deleteQuery = useDeleteQuery();
 
   const handleSaveEdit = (id: string, newName: string) => {
-    store.updateQuery(id, { name: newName });
+    updateQuery(id, { name: newName });
     setEditingId(null);
   };
 
   const handleConfirmDelete = (id: string) => {
-    store.deleteQuery(id);
+    deleteQuery(id);
     setDeletingId(null);
   };
 
-  const editingItem = () => {
-    const id = editingId();
-    return id ? store.state.queries.find((q) => q.id === id) : null;
-  };
-
-  const deletingItem = () => {
-    const id = deletingId();
-    return id ? store.state.queries.find((q) => q.id === id) : null;
-  };
-
-  const isQueryOpen = (queryId: string) => {
-    return store.state.openQueryIds.includes(queryId);
-  };
-
   // Only show saved queries in the sidebar
-  const savedQueries = () => store.state.queries.filter((q) => q.saved);
+  const savedQueries = () =>
+    Object.entries(queries()).filter(([_, query]) => query.saved);
 
   return (
     <div class="flex-1 flex flex-col border-t-2 border-accent pt-4">
@@ -56,8 +48,8 @@ export const SavedQueriesSection: Component = () => {
           size="icon"
           class="h-6 w-6"
           onClick={() => {
-            const newId = store.createUnsavedQuery();
-            store.openQuery(newId);
+            const newId = createUnsavedQuery();
+            openQuery(newId);
           }}
         >
           <PlusIcon class="w-4 h-4" />
@@ -65,13 +57,13 @@ export const SavedQueriesSection: Component = () => {
       </div>
       <ul class="space-y-1">
         <For each={savedQueries()}>
-          {(query) => (
+          {([id, query]) => (
             <DataSourceButton
-              id={query.id}
+              id={id}
               name={query.name}
-              onClick={() => store.openQuery(query.id)}
-              onEdit={() => handleEdit(query.id)}
-              onDelete={() => handleDelete(query.id)}
+              onClick={() => openQuery(id)}
+              onEdit={() => setEditingId(id)}
+              onDelete={() => setDeletingId(id)}
             />
           )}
         </For>
@@ -80,7 +72,7 @@ export const SavedQueriesSection: Component = () => {
         open={editingId() !== null}
         title="Edit Query"
         description="Update the name of your query."
-        itemName={editingItem()?.name || ""}
+        itemName={editingQuery()?.name || ""}
         onOpenChange={(open) => setEditingId(open ? editingId() : null)}
         onSave={(newName) => {
           const id = editingId();
@@ -91,7 +83,7 @@ export const SavedQueriesSection: Component = () => {
         open={deletingId() !== null}
         title="Delete Query"
         description="This will permanently delete the query."
-        itemName={deletingItem()?.name || ""}
+        itemName={deletingQuery()?.name || ""}
         onOpenChange={(open) => setDeletingId(open ? deletingId() : null)}
         onConfirm={() => {
           const id = deletingId();

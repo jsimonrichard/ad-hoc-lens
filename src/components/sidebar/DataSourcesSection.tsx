@@ -4,39 +4,30 @@ import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
 import { AddItemDialog } from "@/components/sidebar/AddItemDialog";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
-import { useStore } from "@/store";
+import {
+  useDataSource,
+  useDataSources,
+  useDeleteDataSource,
+  useUpdateDataSource,
+} from "@/store/dataSources";
 
 export const DataSourcesSection: Component = () => {
-  const store = useStore();
+  const dataSources = useDataSources();
+  const updateDataSource = useUpdateDataSource();
+  const deleteDataSource = useDeleteDataSource();
   const [editingId, setEditingId] = createSignal<string | null>(null);
   const [deletingId, setDeletingId] = createSignal<string | null>(null);
-
-  const handleEdit = (id: string) => {
-    setEditingId(id);
-  };
-
-  const handleDelete = (id: string) => {
-    setDeletingId(id);
-  };
+  const editingSource = useDataSource(editingId() ?? undefined);
+  const deletingSource = useDataSource(deletingId() ?? undefined);
 
   const handleSaveEdit = (id: string, newName: string) => {
-    store.updateDataSource(id, { name: newName });
+    updateDataSource(id, { name: newName });
     setEditingId(null);
   };
 
   const handleConfirmDelete = (id: string) => {
-    store.deleteDataSource(id);
+    deleteDataSource(id);
     setDeletingId(null);
-  };
-
-  const editingItem = () => {
-    const id = editingId();
-    return id ? store.state.dataSources.find((ds) => ds.id === id) : null;
-  };
-
-  const deletingItem = () => {
-    const id = deletingId();
-    return id ? store.state.dataSources.find((ds) => ds.id === id) : null;
   };
 
   return (
@@ -54,13 +45,13 @@ export const DataSourcesSection: Component = () => {
         />
       </div>
       <ul class="space-y-1">
-        <For each={store.state.dataSources}>
-          {(ds) => (
+        <For each={Object.entries(dataSources())}>
+          {([id, ds]) => (
             <DataSourceButton
-              id={ds.id}
+              id={id}
               name={ds.name}
-              onEdit={() => handleEdit(ds.id)}
-              onDelete={() => handleDelete(ds.id)}
+              onEdit={() => setEditingId(id)}
+              onDelete={() => setDeletingId(id)}
             />
           )}
         </For>
@@ -69,7 +60,7 @@ export const DataSourcesSection: Component = () => {
         open={editingId() !== null}
         title="Edit Data Source"
         description="Update the name of your data source."
-        itemName={editingItem()?.name || ""}
+        itemName={editingSource()?.name || ""}
         onOpenChange={(open) => setEditingId(open ? editingId() : null)}
         onSave={(newName) => {
           const id = editingId();
@@ -80,7 +71,7 @@ export const DataSourcesSection: Component = () => {
         open={deletingId() !== null}
         title="Delete Data Source"
         description="This will permanently delete the data source."
-        itemName={deletingItem()?.name || ""}
+        itemName={deletingSource()?.name || ""}
         onOpenChange={(open) => setDeletingId(open ? deletingId() : null)}
         onConfirm={() => {
           const id = deletingId();
