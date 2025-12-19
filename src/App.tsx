@@ -1,11 +1,13 @@
 import type { Component } from "solid-js";
 import { createSignal, For } from "solid-js";
-import { PlusIcon, XIcon } from "lucide-solid";
+import PlusIcon from "lucide-solid/icons/plus";
+import XIcon from "lucide-solid/icons/x";
 import { cn } from "@/libs/cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { TextFieldRoot } from "@/components/ui/textfield";
 import { TextArea } from "@/components/ui/textarea";
+import { DataSourceButton } from "@/components/DataSourceButton";
 
 interface DataSource {
   id: string;
@@ -22,6 +24,7 @@ export default function App() {
   const [queries, setQueries] = createSignal([
     { id: "query1", name: "Query 1", content: "" },
   ]);
+  const [dataSources, setDataSources] = createSignal(mockDataSources);
 
   const addQuery = () => {
     const newId = `query${queries().length + 1}`;
@@ -32,16 +35,28 @@ export default function App() {
     setActiveTab(newId);
   };
 
+  const handleEditDataSource = (id: string) => {
+    // TODO: Implement edit functionality
+    console.log("Edit data source:", id);
+  };
+
+  const handleDeleteDataSource = (id: string) => {
+    setDataSources(dataSources().filter((ds) => ds.id !== id));
+  };
+
   return (
-    <div class="flex h-screen dark bg-background text-foreground">
+    <div class="flex h-screen bg-background text-foreground">
       <aside class="w-64 border-r-2 border-accent p-4 flex flex-col">
         <h2 class="text-lg font-semibold mb-4">Data Sources</h2>
         <ul class="space-y-1">
-          <For each={mockDataSources}>
+          <For each={dataSources()}>
             {(ds) => (
-              <Button variant="ghost" class="w-full justify-start">
-                {ds.name}
-              </Button>
+              <DataSourceButton
+                id={ds.id}
+                name={ds.name}
+                onEdit={handleEditDataSource}
+                onDelete={handleDeleteDataSource}
+              />
             )}
           </For>
         </ul>
