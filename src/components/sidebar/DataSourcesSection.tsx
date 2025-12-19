@@ -4,22 +4,10 @@ import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
 import { AddItemDialog } from "@/components/sidebar/AddItemDialog";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
+import { useStore } from "@/store";
 
-interface DataSource {
-  id: string;
-  name: string;
-}
-
-interface DataSourcesSectionProps {
-  dataSources: DataSource[];
-  onEdit?: (id: string, newName: string) => void;
-  onDelete?: (id: string) => void;
-  onAdd?: () => void;
-}
-
-export const DataSourcesSection: Component<DataSourcesSectionProps> = (
-  props
-) => {
+export const DataSourcesSection: Component = () => {
+  const store = useStore();
   const [editingId, setEditingId] = createSignal<string | null>(null);
   const [deletingId, setDeletingId] = createSignal<string | null>(null);
 
@@ -32,23 +20,23 @@ export const DataSourcesSection: Component<DataSourcesSectionProps> = (
   };
 
   const handleSaveEdit = (id: string, newName: string) => {
-    props.onEdit?.(id, newName);
+    store.updateDataSource(id, { name: newName });
     setEditingId(null);
   };
 
   const handleConfirmDelete = (id: string) => {
-    props.onDelete?.(id);
+    store.deleteDataSource(id);
     setDeletingId(null);
   };
 
   const editingItem = () => {
     const id = editingId();
-    return id ? props.dataSources.find((ds) => ds.id === id) : null;
+    return id ? store.state.dataSources.find((ds) => ds.id === id) : null;
   };
 
   const deletingItem = () => {
     const id = deletingId();
-    return id ? props.dataSources.find((ds) => ds.id === id) : null;
+    return id ? store.state.dataSources.find((ds) => ds.id === id) : null;
   };
 
   return (
@@ -59,11 +47,14 @@ export const DataSourcesSection: Component<DataSourcesSectionProps> = (
           title="Add Data Source"
           description="Add a new data source to your workspace."
           placeholder="Data source configuration will go here."
-          onAdd={() => props.onAdd?.()}
+          onAdd={() => {
+            // TODO: Implement add data source functionality
+            console.log("Add data source");
+          }}
         />
       </div>
       <ul class="space-y-1">
-        <For each={props.dataSources}>
+        <For each={store.state.dataSources}>
           {(ds) => (
             <DataSourceButton
               id={ds.id}

@@ -4,23 +4,10 @@ import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
 import { AddItemDialog } from "@/components/sidebar/AddItemDialog";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
+import { useStore } from "@/store";
 
-interface SavedQuery {
-  id: string;
-  name: string;
-  content: string;
-}
-
-interface SavedQueriesSectionProps {
-  savedQueries: SavedQuery[];
-  onEdit?: (id: string, newName: string) => void;
-  onDelete?: (id: string) => void;
-  onAdd?: () => void;
-}
-
-export const SavedQueriesSection: Component<SavedQueriesSectionProps> = (
-  props
-) => {
+export const SavedQueriesSection: Component = () => {
+  const store = useStore();
   const [editingId, setEditingId] = createSignal<string | null>(null);
   const [deletingId, setDeletingId] = createSignal<string | null>(null);
 
@@ -33,23 +20,27 @@ export const SavedQueriesSection: Component<SavedQueriesSectionProps> = (
   };
 
   const handleSaveEdit = (id: string, newName: string) => {
-    props.onEdit?.(id, newName);
+    store.updateQuery(id, { name: newName });
     setEditingId(null);
   };
 
   const handleConfirmDelete = (id: string) => {
-    props.onDelete?.(id);
+    store.deleteQuery(id);
     setDeletingId(null);
   };
 
   const editingItem = () => {
     const id = editingId();
-    return id ? props.savedQueries.find((q) => q.id === id) : null;
+    return id ? store.state.queries.find((q) => q.id === id) : null;
   };
 
   const deletingItem = () => {
     const id = deletingId();
-    return id ? props.savedQueries.find((q) => q.id === id) : null;
+    return id ? store.state.queries.find((q) => q.id === id) : null;
+  };
+
+  const isQueryOpen = (queryId: string) => {
+    return store.state.openQueryIds.includes(queryId);
   };
 
   return (
@@ -57,18 +48,21 @@ export const SavedQueriesSection: Component<SavedQueriesSectionProps> = (
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">Saved Queries</h2>
         <AddItemDialog
-          title="Add Saved Query"
-          description="Save a query for quick access."
+          title="Add Query"
+          description="Create a new query."
           placeholder="Query configuration will go here."
-          onAdd={() => props.onAdd?.()}
+          onAdd={() => {
+            store.addQuery();
+          }}
         />
       </div>
       <ul class="space-y-1">
-        <For each={props.savedQueries}>
+        <For each={store.state.queries}>
           {(query) => (
             <DataSourceButton
               id={query.id}
               name={query.name}
+              onClick={() => store.openQuery(query.id)}
               onEdit={() => handleEdit(query.id)}
               onDelete={() => handleDelete(query.id)}
             />
@@ -77,8 +71,8 @@ export const SavedQueriesSection: Component<SavedQueriesSectionProps> = (
       </ul>
       <EditItemDialog
         open={editingId() !== null}
-        title="Edit Saved Query"
-        description="Update the name of your saved query."
+        title="Edit Query"
+        description="Update the name of your query."
         itemName={editingItem()?.name || ""}
         onOpenChange={(open) => setEditingId(open ? editingId() : null)}
         onSave={(newName) => {
@@ -88,8 +82,8 @@ export const SavedQueriesSection: Component<SavedQueriesSectionProps> = (
       />
       <ConfirmDeleteDialog
         open={deletingId() !== null}
-        title="Delete Saved Query"
-        description="This will permanently delete the saved query."
+        title="Delete Query"
+        description="This will permanently delete the query."
         itemName={deletingItem()?.name || ""}
         onOpenChange={(open) => setDeletingId(open ? deletingId() : null)}
         onConfirm={() => {

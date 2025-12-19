@@ -22,6 +22,7 @@ interface DataSourceButtonProps {
   name: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onClick?: (id: string) => void;
 }
 
 const MenuItems: Component<{
@@ -33,7 +34,10 @@ const MenuItems: Component<{
       <PencilIcon class="mr-2 h-4 w-4" />
       Edit
     </ContextMenuItem>
-    <ContextMenuItem onSelect={props.onDelete} class="text-destructive focus:text-destructive">
+    <ContextMenuItem
+      onSelect={props.onDelete}
+      class="text-destructive focus:text-destructive"
+    >
       <TrashIcon class="mr-2 h-4 w-4" />
       Delete
     </ContextMenuItem>
@@ -49,7 +53,10 @@ const DropdownMenuItems: Component<{
       <PencilIcon class="mr-2 h-4 w-4" />
       Edit
     </DropdownMenuItem>
-    <DropdownMenuItem onSelect={props.onDelete} class="text-destructive focus:text-destructive">
+    <DropdownMenuItem
+      onSelect={props.onDelete}
+      class="text-destructive focus:text-destructive"
+    >
       <TrashIcon class="mr-2 h-4 w-4" />
       Delete
     </DropdownMenuItem>
@@ -65,11 +72,19 @@ export const DataSourceButton: Component<DataSourceButtonProps> = (props) => {
     props.onDelete?.(props.id);
   };
 
+  const handleClick = () => {
+    props.onClick?.(props.id);
+  };
+
   return (
     <div class="group flex flex-row items-center w-full rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
       <ContextMenu>
         <ContextMenuTrigger as="div" class="flex-1">
-          <Button variant="ghost" class="w-full justify-start hover:bg-transparent">
+          <Button
+            variant="ghost"
+            class="w-full justify-start hover:bg-transparent"
+            onClick={handleClick}
+          >
             {props.name}
           </Button>
         </ContextMenuTrigger>
@@ -96,4 +111,3 @@ export const DataSourceButton: Component<DataSourceButtonProps> = (props) => {
     </div>
   );
 };
-
