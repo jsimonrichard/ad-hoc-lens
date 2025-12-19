@@ -1,7 +1,8 @@
 import type { Component } from "solid-js";
 import { For, createSignal } from "solid-js";
+import PlusIcon from "lucide-solid/icons/plus";
+import { Button } from "@/components/ui/button";
 import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
-import { AddItemDialog } from "@/components/sidebar/AddItemDialog";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
 import { useStore } from "@/store";
@@ -43,21 +44,27 @@ export const SavedQueriesSection: Component = () => {
     return store.state.openQueryIds.includes(queryId);
   };
 
+  // Only show saved queries in the sidebar
+  const savedQueries = () => store.state.queries.filter((q) => q.saved);
+
   return (
     <div class="flex-1 flex flex-col border-t-2 border-accent pt-4">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Saved Queries</h2>
-        <AddItemDialog
-          title="Add Query"
-          description="Create a new query."
-          placeholder="Query configuration will go here."
-          onAdd={() => {
-            store.addQuery();
+        <h2 class="text-lg font-semibold">Queries</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-6 w-6"
+          onClick={() => {
+            const newId = store.createUnsavedQuery();
+            store.openQuery(newId);
           }}
-        />
+        >
+          <PlusIcon class="w-4 h-4" />
+        </Button>
       </div>
       <ul class="space-y-1">
-        <For each={store.state.queries}>
+        <For each={savedQueries()}>
           {(query) => (
             <DataSourceButton
               id={query.id}

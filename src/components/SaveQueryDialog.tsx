@@ -11,28 +11,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface EditItemDialogProps {
+interface SaveQueryDialogProps {
   open: boolean;
-  title: string;
-  description: string;
-  itemName: string;
+  defaultName: string;
   onOpenChange: (open: boolean) => void;
-  onSave: (newName: string) => void;
+  onSave: (name: string) => void;
 }
 
-export const EditItemDialog: Component<EditItemDialogProps> = (props) => {
-  const [editedName, setEditedName] = createSignal(props.itemName);
+export const SaveQueryDialog: Component<SaveQueryDialogProps> = (props) => {
+  const [queryName, setQueryName] = createSignal(props.defaultName);
 
-  // Reset the edited name when dialog opens with a new item
+  // Reset the query name when dialog opens with a new default name
   createEffect(() => {
     if (props.open) {
-      setEditedName(props.itemName);
+      setQueryName(props.defaultName);
     }
   });
 
   const handleSave = () => {
-    if (editedName().trim()) {
-      props.onSave(editedName().trim());
+    if (queryName().trim()) {
+      props.onSave(queryName().trim());
       props.onOpenChange(false);
     }
   };
@@ -48,16 +46,19 @@ export const EditItemDialog: Component<EditItemDialogProps> = (props) => {
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{props.title}</DialogTitle>
-          <DialogDescription>{props.description}</DialogDescription>
+          <DialogTitle>Save Query</DialogTitle>
+          <DialogDescription>
+            Enter a name for your query. It will be saved and appear in the
+            Queries section.
+          </DialogDescription>
         </DialogHeader>
         <div class="py-4">
           <TextFieldRoot>
             <TextField
-              value={editedName()}
-              onInput={(e) => setEditedName(e.currentTarget.value)}
+              value={queryName()}
+              onInput={(e) => setQueryName(e.currentTarget.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter name"
+              placeholder="Enter query name"
               autofocus
             />
           </TextFieldRoot>
@@ -66,7 +67,7 @@ export const EditItemDialog: Component<EditItemDialogProps> = (props) => {
           <Button variant="outline" onClick={() => props.onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!editedName().trim()}>
+          <Button onClick={handleSave} disabled={!queryName().trim()}>
             Save
           </Button>
         </DialogFooter>

@@ -1,10 +1,11 @@
 import type { Component } from "solid-js";
-import { For, createSignal } from "solid-js";
+import { For, createSignal, onMount, onCleanup } from "solid-js";
 import PlusIcon from "lucide-solid/icons/plus";
 import XIcon from "lucide-solid/icons/x";
 import ChevronDownIcon from "lucide-solid/icons/chevron-down";
 import PlayIcon from "lucide-solid/icons/play";
 import PencilIcon from "lucide-solid/icons/pencil";
+import SaveIcon from "lucide-solid/icons/save";
 import { cn } from "@/libs/cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -23,12 +24,16 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
+import { SaveQueryDialog } from "@/components/SaveQueryDialog";
+import { CloseQueryDialog } from "@/components/CloseQueryDialog";
 import { Sidebar } from "@/components/sidebar";
 import { useStore } from "@/store";
 
 export default function App() {
   const store = useStore();
   const [editingTabId, setEditingTabId] = createSignal<string | null>(null);
+  const [savingQueryId, setSavingQueryId] = createSignal<string | null>(null);
+  const [closingQueryId, setClosingQueryId] = createSignal<string | null>(null);
 
   const handleEditTab = (tabId: string) => {
     setEditingTabId(tabId);
@@ -37,7 +42,13 @@ export default function App() {
   const handleSaveEdit = (newName: string) => {
     const tabId = editingTabId();
     if (tabId) {
-      store.updateQuery(tabId, { name: newName });
+      const query = store.state.queries.find((q) => q.id === tabId);
+      // If query is unsaved, automatically save it when renamed
+      if (query && !query.saved) {
+        store.updateQuery(tabId, { name: newName, saved: true });
+      } else {
+        store.updateQuery(tabId, { name: newName });
+      }
       setEditingTabId(null);
     }
   };
@@ -46,6 +57,87 @@ export default function App() {
     const tabId = editingTabId();
     return tabId ? store.state.queries.find((q) => q.id === tabId) : null;
   };
+
+  const savingQuery = () => {
+    const queryId = savingQueryId();
+    return queryId ? store.state.queries.find((q) => q.id === queryId) : null;
+  };
+
+  const closingQuery = () => {
+    const queryId = closingQueryId();
+    return queryId ? store.state.queries.find((q) => q.id === queryId) : null;
+  };
+
+  const handleCloseQuery = (queryId: string) => {
+    const query = store.state.queries.find((q) => q.id === queryId);
+    if (!query) return;
+
+    // If query is saved, just close it normally
+    if (query.saved) {
+      store.closeQuery(queryId);
+      return;
+    }
+
+    // If query is unsaved, check if it has content
+    const hasContent = query.content.trim().length > 0;
+
+    if (hasContent) {
+      // Show confirmation dialog
+      setClosingQueryId(queryId);
+    } else {
+      // No content, delete it completely
+      store.deleteQuery(queryId);
+    }
+  };
+
+  const handleConfirmClose = () => {
+    const queryId = closingQueryId();
+    if (queryId) {
+      // Delete the unsaved query completely since it can't be recovered
+      store.deleteQuery(queryId);
+      setClosingQueryId(null);
+    }
+  };
+
+  const handleSaveClick = (queryId: string) => {
+    const query = store.state.queries.find((q) => q.id === queryId);
+    if (!query) return;
+
+    // If query is already saved, no need to do anything
+    if (query.saved) {
+      return;
+    }
+
+    // For unsaved queries, show dialog
+    setSavingQueryId(queryId);
+  };
+
+  const handleSaveQuery = (name: string) => {
+    const queryId = savingQueryId();
+    if (queryId) {
+      store.saveQuery(queryId, name);
+      setSavingQueryId(null);
+    }
+  };
+
+  // Handle Ctrl+S keyboard shortcut
+  onMount(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+S (or Cmd+S on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        const activeTab = store.state.activeTab;
+        if (activeTab) {
+          handleSaveClick(activeTab);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    onCleanup(() => {
+      window.removeEventListener("keydown", handleKeyDown);
+    });
+  });
 
   // Get open queries (queries that are currently open as tabs)
   // Sorted in the order they were added (order in openQueryIds)
@@ -69,12 +161,20 @@ export default function App() {
                   <ContextMenuTrigger as="div">
                     <div
                       class={cn(
-                        "group flex-0 flex flex-row items-center min-w-64 p-2 justify-start text-sm font-medium transition-colors border-t-2 border-b-0 border-t-accent rounded-t-md bg-accent text-accent-foreground hover:bg-gray",
+                        "group flex flex-row items-center flex-shrink min-w-fit p-2 justify-start text-sm font-medium transition-colors border-t-2 border-b-0 border-t-accent rounded-t-md bg-accent text-accent-foreground hover:bg-gray",
                         store.state.activeTab === q.id &&
                           "bg-background text-foreground border-t-teal-700 "
                       )}
                     >
-                      <TabsTrigger value={q.id} class="justify-start">
+                      <TabsTrigger
+                        value={q.id}
+                        class="justify-start w-auto flex-shrink-0"
+                        onClick={(e) => {
+                          // Explicitly handle click to ensure it works even with ContextMenuTrigger
+                          e.stopPropagation();
+                          store.setActiveTab(q.id);
+                        }}
+                      >
                         {q.name}
                       </TabsTrigger>
                       <Button
@@ -85,7 +185,10 @@ export default function App() {
                           store.state.activeTab != q.id && "opacity-0",
                           "group-hover:opacity-100"
                         )}
-                        onClick={() => store.closeQuery(q.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCloseQuery(q.id);
+                        }}
                       >
                         <XIcon class="w-4" />
                       </Button>
@@ -124,33 +227,15 @@ export default function App() {
                   <div class="flex flex-col gap-3">
                     {/* Toolbar */}
                     <div class="flex items-center gap-2 pb-2 border-b">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          as={Button}
-                          variant="outline"
-                          class="flex items-center gap-2"
-                        >
-                          <span class="text-sm">
-                            {activeDataSource()?.name || "Select data source"}
-                          </span>
-                          <ChevronDownIcon class="w-4 h-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <For each={store.state.dataSources}>
-                            {(ds) => (
-                              <DropdownMenuItem
-                                onSelect={() =>
-                                  store.updateQuery(q.id, {
-                                    dataSourceId: ds.id,
-                                  })
-                                }
-                              >
-                                {ds.name}
-                              </DropdownMenuItem>
-                            )}
-                          </For>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="outline"
+                        class="flex items-center gap-2"
+                        onClick={() => handleSaveClick(q.id)}
+                        title="Save query (Ctrl+S)"
+                      >
+                        <SaveIcon class="w-4 h-4" />
+                        Save
+                      </Button>
                       <Button
                         variant="default"
                         class="flex items-center gap-2"
@@ -194,6 +279,22 @@ export default function App() {
           itemName={editingTab()?.name || ""}
           onOpenChange={(open) => setEditingTabId(open ? editingTabId() : null)}
           onSave={handleSaveEdit}
+        />
+        <SaveQueryDialog
+          open={savingQueryId() !== null}
+          defaultName={store.getNextUntitledName()}
+          onOpenChange={(open) =>
+            setSavingQueryId(open ? savingQueryId() : null)
+          }
+          onSave={handleSaveQuery}
+        />
+        <CloseQueryDialog
+          open={closingQueryId() !== null}
+          queryName={closingQuery()?.name || "Untitled"}
+          onOpenChange={(open) =>
+            setClosingQueryId(open ? closingQueryId() : null)
+          }
+          onConfirm={handleConfirmClose}
         />
       </main>
     </div>

@@ -9,18 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface ConfirmDeleteDialogProps {
+interface CloseQueryDialogProps {
   open: boolean;
-  title: string;
-  description: string;
-  itemName: string;
+  queryName: string;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }
 
-export const ConfirmDeleteDialog: Component<ConfirmDeleteDialogProps> = (
-  props
-) => {
+export const CloseQueryDialog: Component<CloseQueryDialogProps> = (props) => {
   const handleConfirm = () => {
     props.onConfirm();
     props.onOpenChange(false);
@@ -37,21 +33,18 @@ export const ConfirmDeleteDialog: Component<ConfirmDeleteDialogProps> = (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
-          <DialogTitle>{props.title}</DialogTitle>
-          <DialogDescription>{props.description}</DialogDescription>
+          <DialogTitle>Close Unsaved Query</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to close <strong>"{props.queryName}"</strong>?
+            Your unsaved changes will be lost.
+          </DialogDescription>
         </DialogHeader>
-        <div class="py-4">
-          <p class="text-sm text-muted-foreground">
-            Are you sure you want to delete <strong>"{props.itemName}"</strong>?
-            This action cannot be undone.
-          </p>
-        </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => props.onOpenChange(false)}>
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleConfirm}>
-            Delete
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
