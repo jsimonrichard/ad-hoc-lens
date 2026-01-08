@@ -5,7 +5,7 @@ import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
 import {
-  useCreateUnsavedQuery,
+  useCreateAndOpenUnsavedQuery,
   useDeleteQuery,
   useOpenQuery,
   useQueries,
@@ -20,7 +20,7 @@ export function SavedQueriesSection() {
   const editingQuery = useQuery(editingId ?? undefined);
   const deletingQuery = useQuery(deletingId ?? undefined);
   const openQuery = useOpenQuery();
-  const createUnsavedQuery = useCreateUnsavedQuery();
+  const createAndOpenUnsavedQuery = useCreateAndOpenUnsavedQuery();
   const updateQuery = useUpdateQuery();
   const deleteQuery = useDeleteQuery();
 
@@ -38,22 +38,20 @@ export function SavedQueriesSection() {
   const savedQueries = Object.entries(queries).filter(([_, query]) => query.saved);
 
   return (
-    <div className="flex-1 flex flex-col border-t-2 border-accent pt-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Queries</h2>
+    <div className="flex-1 flex flex-col border-t-2 border-accent pt-2">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold">Queries</h2>
         <Button
           variant="ghost"
-          size="icon"
-          className="h-6 w-6"
+          size="icon-xs"
           onClick={() => {
-            const newId = createUnsavedQuery();
-            openQuery(newId);
+            createAndOpenUnsavedQuery();
           }}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3 h-3" />
         </Button>
       </div>
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
         {savedQueries.map(([id, query]) => (
           <DataSourceButton
             key={id}

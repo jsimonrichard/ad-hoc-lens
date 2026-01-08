@@ -152,6 +152,52 @@ export function useCreateUnsavedQuery() {
   };
 }
 
+export function useCreateAndOpenUnsavedQuery() {
+  const { setState } = useStoreContext();
+
+  return () => {
+    const newId = `query${Date.now()}`;
+    setState((prev) => {
+      // Calculate untitled name from previous state
+      const untitledPattern = /^Untitled( (\d+))?$/;
+      let maxNum = -1;
+
+      for (const queryId in prev.queries) {
+        const query = prev.queries[queryId];
+        if (!query.saved) continue;
+
+        const match = query.name.match(untitledPattern);
+        if (match) {
+          const num = match[1] ? parseInt(match[1], 10) : 0;
+          maxNum = Math.max(maxNum, num);
+        }
+      }
+
+      const untitledName = maxNum === -1 ? "Untitled" : `Untitled ${maxNum + 1}`;
+      
+      // Create the query and open it in a single state update
+      const newOpenQueryIds = prev.openQueryIds.includes(newId)
+        ? prev.openQueryIds
+        : [...prev.openQueryIds, newId];
+      
+      return {
+        ...prev,
+        queries: {
+          ...prev.queries,
+          [newId]: {
+            name: untitledName,
+            content: "",
+            saved: false,
+          },
+        },
+        openQueryIds: newOpenQueryIds,
+        activeTab: newId,
+      };
+    });
+    return newId;
+  };
+}
+
 export function useOpenQuery() {
   const { state, setState } = useStoreContext();
   return (queryId: string) => {

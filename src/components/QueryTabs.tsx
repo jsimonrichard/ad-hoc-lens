@@ -12,8 +12,7 @@ import {
 import {
   useActiveTab,
   useCloseQueryTab,
-  useCreateUnsavedQuery,
-  useOpenQuery,
+  useCreateAndOpenUnsavedQuery,
   useOpenQueryIds,
   useQueries,
 } from "@/store/queries";
@@ -27,8 +26,7 @@ export function QueryTabs() {
   const closeQueryTab = useCloseQueryTab();
   const [closingQueryId, setClosingQueryId] = useState<string | null>(null);
   const [editingQueryId, setEditingQueryId] = useState<string | null>(null);
-  const createUnsavedQuery = useCreateUnsavedQuery();
-  const openQuery = useOpenQuery();
+  const createAndOpenUnsavedQuery = useCreateAndOpenUnsavedQuery();
 
   const handleCloseTab = (tabId: string) => {
     const query = queries[tabId];
@@ -62,14 +60,15 @@ export function QueryTabs() {
               <ContextMenuTrigger asChild>
                 <div
                   className={cn(
-                    "group flex flex-row items-center flex-shrink-0 min-w-fit px-2 py-1 justify-start text-xs font-medium transition-colors border-t-2 border-b-0 border-t-accent rounded-t-md bg-accent text-accent-foreground hover:bg-gray cursor-pointer relative h-full",
-                    activeTab === queryId &&
-                      "bg-background text-foreground border-t-emerald-700 rounded-t-md z-10 before:absolute before:inset-[-2px_-2px_0_-2px] before:bg-background before:rounded-t-md before:z-[-1]"
+                    "group flex flex-row items-center flex-shrink-0 min-w-fit px-2 py-1 justify-start text-xs font-medium border-t-2 border-b-0 rounded-t-md bg-accent text-accent-foreground hover:bg-gray cursor-pointer relative h-full transition-[background-color,color]",
+                    activeTab === queryId
+                      ? "bg-background text-foreground border-t-accent rounded-t-md z-10 before:absolute before:inset-[-2px_-2px_0_-2px] before:bg-background before:rounded-t-md before:z-[-1]"
+                      : "border-t-accent"
                   )}
                 >
                   <TabsTrigger
                     value={queryId}
-                    className="justify-start w-auto flex-shrink-0 cursor-pointer text-xs h-full py-0"
+                    className="justify-start w-auto flex-shrink-0 cursor-pointer text-xs h-full py-0 border-0 focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none"
                     onClick={() => {
                       // Handle tab selection explicitly since ContextMenuTrigger might interfere
                       // Don't stop propagation to let Tabs component also handle it, but ensure our handler runs
@@ -110,8 +109,7 @@ export function QueryTabs() {
             variant="ghost"
             className="rounded-md self-center cursor-pointer"
             onClick={() => {
-              const newId = createUnsavedQuery();
-              openQuery(newId);
+              createAndOpenUnsavedQuery();
             }}
           >
             <Plus className="w-4" />
