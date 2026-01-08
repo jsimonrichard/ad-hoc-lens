@@ -6,8 +6,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { createTheme } from "@uiw/codemirror-themes";
 import { tags as t } from "@lezer/highlight";
-import { useMemo, useEffect, useState } from "react";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useMemo, useState, useEffect } from "react";
 
 // Function to get CSS variable value
 function getCSSVariable(variable: string): string {
@@ -18,7 +17,9 @@ function getCSSVariable(variable: string): string {
 }
 
 // Create custom theme using Tailwind colors
-function createCustomTheme(isDark: boolean) {
+function createCustomTheme() {
+  const isDark = document.documentElement.classList.contains("dark");
+
   // Get color values from CSS variables
   const card = getCSSVariable("--color-card");
   const cardForeground = getCSSVariable("--color-card-foreground");
@@ -91,53 +92,28 @@ interface QueryEditorProps {
 export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
   const query = useQuery(queryId);
   const updateQuery = useUpdateQuery();
-  const { theme } = useTheme();
-  const [themeKey, setThemeKey] = useState(0);
+  const [isDark, setIsDark] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      document.documentElement.classList.contains("dark")
+  );
 
-  // Get effective theme (system -> actual light/dark)
-  const getEffectiveTheme = () => {
-    if (theme === "system") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-    }
-    return theme;
-  };
-
-  const effectiveTheme = getEffectiveTheme();
-  const isDark = effectiveTheme === "dark";
-
-  // Force theme recreation after CSS variables have been recalculated
+  // Listen for theme changes
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setThemeKey((prev) => prev + 1);
-      });
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
     });
-  }, [theme]);
 
-  // Listen to system preference changes when theme is "system"
-  useEffect(() => {
-    if (theme !== "system") return;
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setThemeKey((prev) => prev + 1);
-        });
-      });
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [theme]);
+    return () => observer.disconnect();
+  }, []);
 
   // Create theme that updates based on current CSS variables and theme
-  const customTheme = useMemo(
-    () => createCustomTheme(isDark),
-    [isDark, themeKey]
-  );
+  const customTheme = useMemo(() => createCustomTheme(), [isDark]);
 
   return (
     <TabsContent value={queryId} className="bg-background h-full flex flex-col">
