@@ -29,8 +29,8 @@ export function AddItemDialog({ title, description, placeholder, onAdd }: AddIte
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <Plus className="w-4 h-4" />
+        <Button variant="ghost" size="icon-xs">
+          <Plus className="w-3 h-3" />
         </Button>
       </DialogTrigger>
       <DialogContent>

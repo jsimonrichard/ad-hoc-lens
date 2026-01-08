@@ -80,7 +80,8 @@ export function DataSourceButton({ id, name, onEdit, onDelete, onClick }: DataSo
           <div className="flex-1">
             <Button
               variant="ghost"
-              className="w-full justify-start hover:bg-transparent cursor-pointer"
+              size="sm"
+              className="w-full justify-start hover:bg-transparent cursor-pointer text-xs h-6"
               onClick={handleClick}
             >
               {name}
@@ -95,13 +96,13 @@ export function DataSourceButton({ id, name, onEdit, onDelete, onClick }: DataSo
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             className={cn(
-              "w-6 h-6 aspect-square transition-all opacity-0 group-hover:opacity-100 hover:bg-transparent cursor-pointer"
+              "transition-all opacity-0 group-hover:opacity-100 hover:bg-transparent cursor-pointer"
             )}
             aria-label="More options"
           >
-            <MoreVertical className="w-4" />
+            <MoreVertical className="w-3 h-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

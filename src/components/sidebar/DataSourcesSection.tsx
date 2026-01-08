@@ -30,9 +30,9 @@ export function DataSourcesSection() {
   };
 
   return (
-    <div className="flex-1 flex flex-col mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Data Sources</h2>
+    <div className="flex-1 flex flex-col mb-3">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold">Data Sources</h2>
         <AddItemDialog
           title="Add Data Source"
           description="Add a new data source to your workspace."
@@ -43,7 +43,7 @@ export function DataSourcesSection() {
           }}
         />
       </div>
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
         {Object.entries(dataSources).map(([id, ds]) => (
           <DataSourceButton
             key={id}
