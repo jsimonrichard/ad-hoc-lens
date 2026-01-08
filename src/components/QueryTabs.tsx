@@ -65,6 +65,14 @@ export function QueryTabs() {
                       ? "bg-background text-foreground border-t-accent rounded-t-md z-10 before:absolute before:inset-[-2px_-2px_0_-2px] before:bg-background before:rounded-t-md before:z-[-1]"
                       : "border-t-accent"
                   )}
+                  onAuxClick={(e) => {
+                    // Middle mouse button (button 1) closes the tab
+                    if (e.button === 1) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleCloseTab(queryId);
+                    }
+                  }}
                 >
                   <TabsTrigger
                     value={queryId}
