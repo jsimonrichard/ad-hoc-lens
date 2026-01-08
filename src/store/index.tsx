@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import type { AppState } from "./types";
 import { loadState, STORAGE_KEY, demoState } from "./start";
 
@@ -14,7 +20,9 @@ interface StoreContextValue {
 const StoreContext = createContext<StoreContextValue | null>(null);
 
 // Provider component (contains all reactive code)
-export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   // Create the store with initial state from localStorage
   const [state, setState] = useState<AppState>(loadState);
 
@@ -44,17 +52,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         activeTabValue === "" ||
         !openIds.includes(activeTabValue)
       ) {
-        console.log(
-          "Effect: Setting activeTab to first open tab",
-          openIds[0],
-          "from",
-          activeTabValue
-        );
         setState((prev) => ({ ...prev, activeTab: openIds[0] }));
       }
     } else if (activeTabValue) {
       // If there are no open tabs but activeTab is set, clear it
-      console.log("Effect: Clearing activeTab (no open tabs)");
       setState((prev) => ({ ...prev, activeTab: "" }));
     }
   }, [state.activeTab, state.openQueryIds]);
@@ -95,4 +96,3 @@ export function useLoadDemoState() {
     setState({ ...demoState });
   }, [setState]);
 }
-

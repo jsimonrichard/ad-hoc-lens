@@ -39,7 +39,6 @@ export function DataSourcesSection() {
           placeholder="Data source configuration will go here."
           onAdd={() => {
             // TODO: Implement add data source functionality
-            console.log("Add data source");
           }}
         />
       </div>

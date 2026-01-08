@@ -1,11 +1,11 @@
 import React from "react";
-import type { Query } from "./types.js";
+import type { AppState, Query } from "./types.js";
 import { useStoreContext } from "./index.jsx";
 
 // Must be called before the tab is actually removed from the openQueryIds list
 function updateActiveTabOnTabRemoved(
-  state: { activeTab?: string; openQueryIds: string[] },
-  setState: React.Dispatch<React.SetStateAction<{ activeTab?: string; openQueryIds: string[] }>>,
+  state: AppState,
+  setState: React.Dispatch<React.SetStateAction<AppState>>,
   removedQueryId: string
 ) {
   if (state.activeTab !== removedQueryId) {
@@ -173,13 +173,14 @@ export function useCreateAndOpenUnsavedQuery() {
         }
       }
 
-      const untitledName = maxNum === -1 ? "Untitled" : `Untitled ${maxNum + 1}`;
-      
+      const untitledName =
+        maxNum === -1 ? "Untitled" : `Untitled ${maxNum + 1}`;
+
       // Create the query and open it in a single state update
       const newOpenQueryIds = prev.openQueryIds.includes(newId)
         ? prev.openQueryIds
         : [...prev.openQueryIds, newId];
-      
+
       return {
         ...prev,
         queries: {
@@ -222,4 +223,3 @@ export function useQueries() {
   const { state } = useStoreContext();
   return state.queries;
 }
-

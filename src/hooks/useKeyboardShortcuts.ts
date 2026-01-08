@@ -22,7 +22,6 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
           confirm("Reset all state to defaults? This cannot be undone.")
         ) {
           options.onReset();
-          console.log("State reset to defaults");
         }
       }
     };

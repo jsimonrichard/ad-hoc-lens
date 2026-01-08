@@ -133,7 +133,6 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
           className="flex items-center gap-2"
           onClick={() => {
             // TODO: Implement run query functionality
-            console.log("Run query:", query?.content || "");
           }}
         >
           <Play className="w-4 h-4" />

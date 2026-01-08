@@ -6,10 +6,10 @@
   - Resizable
 - Main window
   - Drag-n-Drop tabs
-  - Use codemirror for SQL editor
+  - [x] Use codemirror for SQL editor
   - Markdown output view
   - Drag-n-Drop table names (into codemirror editor)
-- Tutorial pop-up
+- [/] Tutorial pop-up
 - Queries sidebar should scroll
 - No need for data source drop down
 - Create new `select * from ...` query when clicking on a data source

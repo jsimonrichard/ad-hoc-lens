@@ -6,6 +6,7 @@ import { useActiveTab } from "./store/queries";
 import { QueryEditors } from "./components/QueryEditors";
 import { StoreProvider } from "./store";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { DuckDBProviderWithSuspense } from "./db";
 
 function AppContent() {
   const [activeTab, setActiveTab] = useActiveTab();
@@ -15,7 +16,11 @@ function AppContent() {
       <Sidebar />
 
       <main className="flex-1 flex flex-col overflow-hidden bg-background">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full gap-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-col h-full gap-0"
+        >
           <QueryTabs />
           <div className="flex-1 overflow-auto">
             <QueryEditors />
@@ -30,9 +35,11 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <StoreProvider>
-        <AppContent />
-      </StoreProvider>
+      <DuckDBProviderWithSuspense>
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </DuckDBProviderWithSuspense>
     </ThemeProvider>
   );
 }
