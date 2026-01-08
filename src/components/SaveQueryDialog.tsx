@@ -27,7 +27,7 @@ export function SaveQueryDialog({ saveQueryId, setSaveQueryId }: SaveQueryDialog
     if (open) {
       setQueryName(getUntitledName());
     }
-  }, [open, getUntitledName]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     if (queryName.trim()) {
