@@ -5,6 +5,7 @@ import { QueryTabs } from "@/components/QueryTabs";
 import { useActiveTab } from "./store/queries";
 import { QueryEditors } from "./components/QueryEditors";
 import { StoreProvider } from "./store";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 function AppContent() {
   const [activeTab, setActiveTab] = useActiveTab();
@@ -28,8 +29,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <StoreProvider>
-      <AppContent />
-    </StoreProvider>
+    <ThemeProvider>
+      <StoreProvider>
+        <AppContent />
+      </StoreProvider>
+    </ThemeProvider>
   );
 }

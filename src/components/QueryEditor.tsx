@@ -1,8 +1,87 @@
 import { Play, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { TabsContent } from "@/components/ui/tabs";
 import { useQuery, useUpdateQuery } from "@/store/queries";
+import CodeMirror from "@uiw/react-codemirror";
+import { sql } from "@codemirror/lang-sql";
+import { createTheme } from "@uiw/codemirror-themes";
+import { tags as t } from "@lezer/highlight";
+import { useMemo, useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
+
+// Function to get CSS variable value
+function getCSSVariable(variable: string): string {
+  if (typeof window === "undefined") return "";
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(variable)
+    .trim();
+}
+
+// Create custom theme using Tailwind colors
+function createCustomTheme(isDark: boolean) {
+  // Get color values from CSS variables
+  const card = getCSSVariable("--color-card");
+  const cardForeground = getCSSVariable("--color-card-foreground");
+  const primary = getCSSVariable("--color-primary");
+  const muted = getCSSVariable("--color-muted");
+  const mutedForeground = getCSSVariable("--color-muted-foreground");
+  const foreground = getCSSVariable("--color-foreground");
+
+  // Complementary colors from chart palette
+  const chart1 = getCSSVariable("--color-chart-1");
+  const chart2 = getCSSVariable("--color-chart-2");
+  const chart3 = getCSSVariable("--color-chart-3");
+  const chart4 = getCSSVariable("--color-chart-4");
+  const chart5 = getCSSVariable("--color-chart-5");
+  const ring = getCSSVariable("--color-ring");
+
+  return createTheme({
+    theme: isDark ? "dark" : "light",
+    settings: {
+      background: card,
+      foreground: cardForeground,
+      caret: primary,
+      selection: `${primary}26`, // 15% opacity
+      selectionMatch: `${primary}26`,
+      lineHighlight: `${muted}4d`, // 30% opacity
+      gutterBackground: muted,
+      gutterForeground: mutedForeground,
+    },
+    styles: [
+      // Comments - muted gray
+      { tag: t.comment, color: mutedForeground },
+
+      // Keywords (SELECT, FROM, WHERE, etc.) - primary color
+      { tag: t.keyword, color: primary },
+
+      // Strings - chart-2 (complementary green)
+      { tag: [t.string, t.special(t.brace)], color: chart2 },
+
+      // Numbers - chart-1 (lighter complementary)
+      { tag: t.number, color: chart1 },
+
+      // Booleans and null - chart-3
+      { tag: t.bool, color: chart3 },
+      { tag: t.null, color: chart3 },
+
+      // Operators - ring color (neutral gray)
+      { tag: t.operator, color: ring },
+
+      // Functions - chart-4 (darker complementary)
+      { tag: t.function(t.variableName), color: chart4 },
+
+      // Type names and class names - chart-5 (darkest complementary)
+      { tag: t.typeName, color: chart5 },
+      { tag: t.className, color: chart5 },
+      { tag: t.definition(t.typeName), color: chart5 },
+
+      // Variables and identifiers - foreground (default text color)
+      { tag: t.variableName, color: foreground },
+      { tag: t.attributeName, color: foreground },
+      { tag: t.tagName, color: foreground },
+    ],
+  });
+}
 
 interface QueryEditorProps {
   queryId: string;
@@ -12,43 +91,97 @@ interface QueryEditorProps {
 export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
   const query = useQuery(queryId);
   const updateQuery = useUpdateQuery();
+  const { theme } = useTheme();
+  const [themeKey, setThemeKey] = useState(0);
+
+  // Get effective theme (system -> actual light/dark)
+  const getEffectiveTheme = () => {
+    if (theme === "system") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+    return theme;
+  };
+
+  const effectiveTheme = getEffectiveTheme();
+  const isDark = effectiveTheme === "dark";
+
+  // Force theme recreation after CSS variables have been recalculated
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setThemeKey((prev) => prev + 1);
+      });
+    });
+  }, [theme]);
+
+  // Listen to system preference changes when theme is "system"
+  useEffect(() => {
+    if (theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setThemeKey((prev) => prev + 1);
+        });
+      });
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme]);
+
+  // Create theme that updates based on current CSS variables and theme
+  const customTheme = useMemo(
+    () => createCustomTheme(isDark),
+    [isDark, themeKey]
+  );
 
   return (
-    <TabsContent value={queryId} className="bg-background">
-      <div className="flex flex-col gap-3">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 p-2 border-b">
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={onSave}
-            title="Save query (Ctrl+S)"
-          >
-            <Save className="w-4 h-4" />
-            Save
-          </Button>
-          <Button
-            variant="default"
-            className="flex items-center gap-2"
-            onClick={() => {
-              // TODO: Implement run query functionality
-              console.log("Run query:", query?.content || "");
-            }}
-          >
-            <Play className="w-4 h-4" />
-            Run
-          </Button>
-        </div>
-        <Textarea
-          className="bg-card"
-          placeholder="Write your query here..."
+    <TabsContent value={queryId} className="bg-background h-full flex flex-col">
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 p-2 border-b">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2"
+          onClick={onSave}
+          title="Save query (Ctrl+S)"
+        >
+          <Save className="w-4 h-4" />
+          Save
+        </Button>
+        <Button
+          variant="default"
+          className="flex items-center gap-2"
+          onClick={() => {
+            // TODO: Implement run query functionality
+            console.log("Run query:", query?.content || "");
+          }}
+        >
+          <Play className="w-4 h-4" />
+          Run
+        </Button>
+      </div>
+      <div className="border overflow-auto h-64 flex flex-col">
+        <CodeMirror
           value={query?.content || ""}
-          onChange={(e) =>
-            updateQuery(queryId, { content: e.target.value })
-          }
+          height="100%"
+          extensions={[sql()]}
+          onChange={(value) => updateQuery(queryId, { content: value })}
+          placeholder="Write your query here..."
+          theme={customTheme}
+          basicSetup={{
+            lineNumbers: true,
+            foldGutter: true,
+            dropCursor: false,
+            allowMultipleSelections: false,
+          }}
+          className="h-full w-full"
         />
       </div>
-      <div className="mt-6 border rounded-lg p-4 bg-card mx-4">
+      <div className="mt-4 border rounded-lg p-4 bg-card">
         <h3 className="text-md font-semibold mb-2">Output</h3>
         <div className="rounded-md p-3 font-mono text-sm whitespace-pre-wrap overflow-x-auto">
           Rendered markdown or JSON output will appear here.
@@ -57,4 +190,3 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
     </TabsContent>
   );
 }
-
