@@ -2,5 +2,5 @@
 - Drag-n-drop tabs?
 - Better JSON viewer
 - Query builder option when selecting json / markdown fields
-- Force pagination for the table
+
 - Reduce some posthog features
