@@ -2,6 +2,7 @@ import { Play, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TabsContent } from "@/components/ui/tabs";
 import { useQuery, useUpdateQuery } from "@/store/queries";
+import { useDataSources } from "@/store/dataSources";
 import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { createTheme } from "@uiw/codemirror-themes";
@@ -94,6 +95,7 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
   const query = useQuery(queryId);
   const updateQuery = useUpdateQuery();
   const db = useDuckDB();
+  const dataSources = useDataSources();
   const [isDark, setIsDark] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -116,6 +118,14 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
 
   // Create theme that updates based on current CSS variables and theme
   const customTheme = useMemo(() => createCustomTheme(), [isDark]);
+
+  // Extract table names from data sources and create SQL extension with autocomplete
+  const sqlExtension = useMemo(() => {
+    const tableNames = Object.values(dataSources).map((ds) => ds.name);
+    return sql({
+      schema: tableNames,
+    });
+  }, [dataSources]);
 
   const handleRunQuery = async () => {
     const queryContent = query?.content?.trim();
@@ -171,7 +181,7 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
         <CodeMirror
           value={query?.content || ""}
           height="100%"
-          extensions={[sql()]}
+          extensions={[sqlExtension]}
           onChange={(value) => updateQuery(queryId, { content: value })}
           placeholder="Write your query here..."
           theme={customTheme}
