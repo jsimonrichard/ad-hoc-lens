@@ -1,10 +1,9 @@
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { generateColumns } from "@/utils/table-columns";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -26,12 +25,23 @@ interface QueryTableProps {
   data: Record<string, unknown>[];
   error: string | null;
   isRunning: boolean;
+  totalCount: number;
+  pageIndex: number;
+  pageSize: number;
+  onPageChange: (pageIndex: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
-export function QueryTable({ data, error, isRunning }: QueryTableProps) {
-  const [pageSize, setPageSize] = useState(50);
-  const [pageIndex, setPageIndex] = useState(0);
-
+export function QueryTable({
+  data,
+  error,
+  isRunning,
+  totalCount,
+  pageIndex,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: QueryTableProps) {
   const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(
     () => generateColumns(data),
     [data]
@@ -41,44 +51,29 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: Math.ceil(totalCount / pageSize) || 1,
     state: {
       pagination: {
         pageIndex,
         pageSize,
       },
     },
-    onPaginationChange: (updater) => {
-      if (typeof updater === "function") {
-        const currentState = table.getState().pagination;
-        const newState = updater(currentState);
-        setPageIndex(newState.pageIndex);
-        setPageSize(newState.pageSize);
-      } else {
-        setPageIndex(updater.pageIndex ?? pageIndex);
-        setPageSize(updater.pageSize ?? pageSize);
-      }
-    },
   });
-
-  // Reset to first page when data changes
-  useEffect(() => {
-    setPageIndex(0);
-  }, [data]);
 
   // Generate page options for the dropdown
   const pageOptions = useMemo(() => {
-    const totalPages = Math.ceil(data.length / pageSize) || 1;
+    const totalPages = Math.ceil(totalCount / pageSize) || 1;
     return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }, [data.length, pageSize]);
+  }, [totalCount, pageSize]);
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
         <h3 className="text-sm font-semibold">Results</h3>
-        {data.length > 0 && (
+        {totalCount > 0 && (
           <div className="text-xs text-muted-foreground">
-            {data.length} row{data.length !== 1 ? "s" : ""}
+            {totalCount} row{totalCount !== 1 ? "s" : ""}
             {columns.length > 0 &&
               ` × ${columns.length} column${columns.length !== 1 ? "s" : ""}`}
           </div>
@@ -142,7 +137,7 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
         )}
       </div>
       {/* Pagination Controls */}
-      {data.length > 0 && (
+      {totalCount > 0 && (
         <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/30">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
@@ -152,8 +147,8 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
               value={pageSize.toString()}
               onValueChange={(value) => {
                 const newPageSize = Number(value);
-                setPageSize(newPageSize);
-                setPageIndex(0);
+                onPageSizeChange(newPageSize);
+                onPageChange(0);
               }}
             >
               <SelectTrigger size="sm" className="w-[70px]">
@@ -171,16 +166,15 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+              Page {pageIndex + 1} of {Math.ceil(totalCount / pageSize) || 1}
             </span>
 
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon-sm"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => onPageChange(0)}
+                disabled={pageIndex === 0}
                 title="First page"
               >
                 <ChevronsLeft className="w-3.5 h-3.5" />
@@ -188,8 +182,8 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
               <Button
                 variant="outline"
                 size="icon-sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => onPageChange(pageIndex - 1)}
+                disabled={pageIndex === 0}
                 title="Previous page"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -197,8 +191,8 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
               <Button
                 variant="outline"
                 size="icon-sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                onClick={() => onPageChange(pageIndex + 1)}
+                disabled={pageIndex >= Math.ceil(totalCount / pageSize) - 1}
                 title="Next page"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -206,8 +200,10 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
               <Button
                 variant="outline"
                 size="icon-sm"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
+                onClick={() =>
+                  onPageChange(Math.ceil(totalCount / pageSize) - 1)
+                }
+                disabled={pageIndex >= Math.ceil(totalCount / pageSize) - 1}
                 title="Last page"
               >
                 <ChevronsRight className="w-3.5 h-3.5" />
@@ -220,7 +216,7 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
                 onValueChange={(value) => {
                   const pageNumber = parseInt(value, 10);
                   if (!isNaN(pageNumber)) {
-                    table.setPageIndex(pageNumber - 1);
+                    onPageChange(pageNumber - 1);
                   }
                 }}
               >

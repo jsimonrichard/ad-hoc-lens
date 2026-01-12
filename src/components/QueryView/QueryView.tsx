@@ -7,6 +7,7 @@ import { useDuckDB } from "@/db";
 import { useState } from "react";
 import { QueryEditor } from "./QueryEditor";
 import { QueryTable } from "./QueryTable";
+import { useArrowTablePagination } from "./useArrowTablePagination";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -23,11 +24,15 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
   const updateQuery = useUpdateQuery();
   const db = useDuckDB();
   const dataSources = useDataSources();
-  const [queryResults, setQueryResults] = useState<unknown[]>([]);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
   const tableNames = Object.values(dataSources).map((ds) => ds.name);
+
+  const pagination = useArrowTablePagination({
+    defaultPageSize: 50,
+    queryContent: query?.content,
+  });
 
   const handleRunQuery = async () => {
     const queryContent = query?.content?.trim();
@@ -38,21 +43,17 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
 
     setIsRunning(true);
     setQueryError(null);
-    setQueryResults([]);
+    pagination.reset();
 
     try {
       const conn = await db.connect();
       try {
         const result = await conn.query(queryContent);
-        // DuckDB-wasm returns Arrow tables. Use each row's toJSON() method
-        // to properly serialize all data types (dates, timestamps, etc.)
+        // DuckDB-wasm returns Arrow tables. Store the table reference instead of materializing it
         const arrowTable = result;
-        const resultArray = arrowTable.toArray();
 
-        // Use toJSON() on each row to properly serialize all DuckDB types
-        const serialized = resultArray.map((row) => row.toJSON());
-
-        setQueryResults(serialized);
+        // Set the Arrow table (this will update totalCount and fetch the first page)
+        pagination.setArrowTable(arrowTable);
       } finally {
         await conn.close();
       }
@@ -63,6 +64,7 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
           ? error.message
           : "An error occurred while executing the query"
       );
+      pagination.reset();
     } finally {
       setIsRunning(false);
     }
@@ -108,9 +110,14 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
           {/* Results Section */}
           <ResizablePanel minSize="12em">
             <QueryTable
-              data={queryResults}
+              data={pagination.data}
               error={queryError}
               isRunning={isRunning}
+              totalCount={pagination.totalCount}
+              pageIndex={pagination.pageIndex}
+              pageSize={pagination.pageSize}
+              onPageChange={pagination.setPageIndex}
+              onPageSizeChange={pagination.setPageSize}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
