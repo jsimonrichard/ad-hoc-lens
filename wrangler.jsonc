@@ -1,0 +1,7 @@
+{
+  "name": "ad-hoc-lens",
+  "compatibility_date": "2026-01-12",
+  "assets": {
+    "directory": "./dist"
+  }
+}
