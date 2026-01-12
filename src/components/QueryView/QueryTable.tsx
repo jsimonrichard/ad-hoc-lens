@@ -26,7 +26,7 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
   });
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
         <h3 className="text-sm font-semibold">Results</h3>
         {data.length > 0 && (

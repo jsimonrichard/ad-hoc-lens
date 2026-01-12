@@ -4,11 +4,10 @@ import { SidebarActionsSection } from "@/components/sidebar/SidebarActionsSectio
 
 export function Sidebar() {
   return (
-    <aside className="w-64 border-r border-accent p-2 flex flex-col">
+    <aside className="h-full border-r border-accent p-2 flex flex-col">
       <DataSourcesSection />
       <SavedQueriesSection />
       <SidebarActionsSection />
     </aside>
   );
 }
-

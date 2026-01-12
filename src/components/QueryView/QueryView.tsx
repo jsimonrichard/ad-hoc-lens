@@ -7,6 +7,11 @@ import { useDuckDB } from "@/db";
 import { useState } from "react";
 import { QueryEditor } from "./QueryEditor";
 import { QueryTable } from "./QueryTable";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizablePanelSeparator,
+} from "@/components/ui/resizable";
 
 interface QueryViewProps {
   queryId: string;
@@ -18,7 +23,7 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
   const updateQuery = useUpdateQuery();
   const db = useDuckDB();
   const dataSources = useDataSources();
-  const [queryResults, setQueryResults] = useState<any[]>([]);
+  const [queryResults, setQueryResults] = useState<unknown[]>([]);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -45,7 +50,7 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
         const resultArray = arrowTable.toArray();
 
         // Use toJSON() on each row to properly serialize all DuckDB types
-        const serialized = resultArray.map((row: any) => row.toJSON());
+        const serialized = resultArray.map((row) => row.toJSON());
 
         setQueryResults(serialized);
       } finally {
@@ -86,22 +91,29 @@ export function QueryView({ queryId, onSave }: QueryViewProps) {
           {isRunning ? "Running..." : "Run"}
         </Button>
       </div>
-      {/* Flex Layout: Editor and Results */}
-      <div className="flex-1 flex flex-col min-h-0">
-        {/* Editor Section */}
-        <div className="border-b overflow-auto flex flex-col h-[40%] shrink-0">
-          <QueryEditor
-            value={query?.content || ""}
-            onChange={(value) => updateQuery(queryId, { content: value })}
-            tableNames={tableNames}
-          />
-        </div>
-        {/* Results Section */}
-        <QueryTable
-          data={queryResults}
-          error={queryError}
-          isRunning={isRunning}
-        />
+      {/* Resizable Layout: Editor and Results */}
+      <div className="flex-1">
+        <ResizablePanelGroup orientation="vertical">
+          {/* Editor Section */}
+          <ResizablePanel defaultSize="20em" minSize="12em" maxSize="40em">
+            <div className="h-full overflow-auto flex flex-col border-b">
+              <QueryEditor
+                value={query?.content || ""}
+                onChange={(value) => updateQuery(queryId, { content: value })}
+                tableNames={tableNames}
+              />
+            </div>
+          </ResizablePanel>
+          <ResizablePanelSeparator />
+          {/* Results Section */}
+          <ResizablePanel minSize="12em">
+            <QueryTable
+              data={queryResults}
+              error={queryError}
+              isRunning={isRunning}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </TabsContent>
   );
