@@ -1,5 +1,4 @@
 - Better demo data?
 - Drag-n-drop tabs?
-- Draggable layout
 - Better JSON viewer
 - Query builder option when selecting json / markdown fields
