@@ -2,6 +2,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { useMemo, useState, useEffect } from "react";
 import { createCustomTheme } from "@/utils/codemirror-theme";
+import { Info, ExternalLink } from "lucide-react";
 
 interface QueryEditorProps {
   value: string;
@@ -47,20 +48,33 @@ export function QueryEditor({
   }, [tableNames]);
 
   return (
-    <CodeMirror
-      value={value}
-      height="100%"
-      extensions={[sqlExtension]}
-      onChange={onChange}
-      placeholder={placeholder}
-      theme={customTheme}
-      basicSetup={{
-        lineNumbers: true,
-        foldGutter: true,
-        dropCursor: false,
-        allowMultipleSelections: false,
-      }}
-      className="h-full w-full"
-    />
+    <div className="relative h-full w-full">
+      <CodeMirror
+        value={value}
+        height="100%"
+        extensions={[sqlExtension]}
+        onChange={onChange}
+        placeholder={placeholder}
+        theme={customTheme}
+        basicSetup={{
+          lineNumbers: true,
+          foldGutter: true,
+          dropCursor: false,
+          allowMultipleSelections: false,
+        }}
+        className="h-full w-full"
+      />
+      <a
+        href="https://duckdb.org/docs/stable/sql/introduction"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-md shadow-lg hover:bg-muted transition-colors text-xs text-foreground no-underline z-10"
+        title="DuckDB SQL Documentation"
+      >
+        <Info className="w-4 h-4" />
+        <span>DuckDB SQL Docs</span>
+        <ExternalLink className="w-3 h-3" />
+      </a>
+    </div>
   );
 }
