@@ -15,6 +15,7 @@ import {
   uploadDataSource,
   deleteDataSource as deleteDataSourceFromDB,
 } from "@/db";
+import { useOpenOrCreateDataSourceQuery } from "@/store/queries";
 
 export function DataSourcesSection() {
   const dataSources = useDataSources();
@@ -22,6 +23,7 @@ export function DataSourcesSection() {
   const updateDataSource = useUpdateDataSource();
   const deleteDataSource = useDeleteDataSource();
   const db = useDuckDB();
+  const openOrCreateDataSourceQuery = useOpenOrCreateDataSourceQuery();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const editingSource = useDataSource(editingId ?? undefined);
@@ -68,6 +70,7 @@ export function DataSourcesSection() {
             name={ds.name}
             onEdit={() => setEditingId(id)}
             onDelete={() => setDeletingId(id)}
+            onClick={() => openOrCreateDataSourceQuery(ds.name)}
           />
         ))}
       </ul>

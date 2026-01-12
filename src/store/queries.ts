@@ -223,3 +223,109 @@ export function useQueries() {
   const { state } = useStoreContext();
   return state.queries;
 }
+
+/**
+ * Normalizes a SQL query for comparison by:
+ * - Trimming whitespace
+ * - Converting to uppercase
+ * - Normalizing quotes around identifiers (removes single/double quotes)
+ */
+function normalizeQueryForComparison(query: string): string {
+  let normalized = query.trim().toUpperCase();
+
+  // Remove quotes around identifiers in FROM clause
+  // Matches: SELECT * FROM "table" or SELECT * FROM 'table' or SELECT * FROM table
+  // Converts all to: SELECT * FROM TABLE
+  normalized = normalized.replace(
+    /\bFROM\s+(["']?)([A-Z0-9_]+)\1/gi,
+    (_match, _quote, identifier) => `FROM ${identifier.toUpperCase()}`
+  );
+
+  return normalized;
+}
+
+/**
+ * Opens or creates a query that selects all columns from a data source.
+ * If a query with `SELECT * FROM "<tableName>"` already exists, it opens that query.
+ * Otherwise, creates a new query with that content and opens it.
+ */
+export function useOpenOrCreateDataSourceQuery() {
+  const { state, setState } = useStoreContext();
+
+  return (tableName: string) => {
+    // Escape table name for SQL (double quotes for identifiers)
+    const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
+    const queryContent = `SELECT * FROM ${escapedTableName}`;
+
+    // Check if a query with this content already exists
+    let existingQueryId: string | undefined;
+    const normalizedNew = normalizeQueryForComparison(queryContent);
+
+    for (const [queryId, query] of Object.entries(state.queries)) {
+      // Normalize both queries for comparison (trim whitespace, handle case, normalize quotes)
+      const normalizedExisting = normalizeQueryForComparison(query.content);
+      if (normalizedExisting === normalizedNew) {
+        existingQueryId = queryId;
+        break;
+      }
+    }
+
+    if (existingQueryId) {
+      // Query exists, just open it
+      const query = state.queries[existingQueryId];
+      if (!query) return;
+
+      // Add to openQueryIds if not already open
+      if (!state.openQueryIds.includes(existingQueryId)) {
+        setState((prev) => ({
+          ...prev,
+          openQueryIds: [...prev.openQueryIds, existingQueryId],
+        }));
+      }
+
+      // Switch to this query
+      setState((prev) => ({ ...prev, activeTab: existingQueryId }));
+    } else {
+      // Create a new query with the SELECT * content
+      const newId = `query${Date.now()}`;
+      setState((prev) => {
+        // Calculate untitled name from previous state
+        const untitledPattern = /^Untitled( (\d+))?$/;
+        let maxNum = -1;
+
+        for (const queryId in prev.queries) {
+          const query = prev.queries[queryId];
+          if (!query.saved) continue;
+
+          const match = query.name.match(untitledPattern);
+          if (match) {
+            const num = match[1] ? parseInt(match[1], 10) : 0;
+            maxNum = Math.max(maxNum, num);
+          }
+        }
+
+        const untitledName =
+          maxNum === -1 ? "Untitled" : `Untitled ${maxNum + 1}`;
+
+        // Create the query and open it in a single state update
+        const newOpenQueryIds = prev.openQueryIds.includes(newId)
+          ? prev.openQueryIds
+          : [...prev.openQueryIds, newId];
+
+        return {
+          ...prev,
+          queries: {
+            ...prev.queries,
+            [newId]: {
+              name: untitledName,
+              content: queryContent,
+              saved: false,
+            },
+          },
+          openQueryIds: newOpenQueryIds,
+          activeTab: newId,
+        };
+      });
+    }
+  };
+}
