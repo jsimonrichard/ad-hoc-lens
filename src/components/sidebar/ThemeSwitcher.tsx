@@ -46,12 +46,11 @@ export function ThemeSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="default"
-          className="w-full justify-start"
+          size="icon"
           aria-label={`Theme: ${theme}`}
+          title={getThemeLabel()}
         >
           {getThemeIcon()}
-          <span>{getThemeLabel()}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
