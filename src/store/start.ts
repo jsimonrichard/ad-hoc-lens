@@ -22,7 +22,7 @@ export const demoState: AppState = {
     },
     "saved-2": {
       name: "Markdown rendering",
-      content: `SELECT md('# ' || item.title || e'\n' || item.body) AS issue
+      content: `SELECT md('# ' || item.title || e'\\n' || item.body) AS issue
           FROM rayon_rs_rayon_dataset, UNNEST(resolved_issues) AS t(item);`,
       saved: true,
     },
