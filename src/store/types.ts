@@ -14,4 +14,3 @@ export interface AppState {
   openQueryIds: string[];
   dataSources: Record<string, DataSource>;
 }
-

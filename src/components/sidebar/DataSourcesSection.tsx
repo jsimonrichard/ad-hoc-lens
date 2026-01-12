@@ -1,30 +1,55 @@
 import { useState } from "react";
 import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
-import { AddItemDialog } from "@/components/sidebar/AddItemDialog";
+import { AddDataSourceDialog } from "@/components/sidebar/AddDataSourceDialog";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
 import {
   useDataSource,
   useDataSources,
+  useAddDataSource,
   useDeleteDataSource,
   useUpdateDataSource,
 } from "@/store/dataSources";
+import {
+  useDuckDB,
+  uploadDataSource,
+  deleteDataSource as deleteDataSourceFromDB,
+} from "@/db";
 
 export function DataSourcesSection() {
   const dataSources = useDataSources();
+  const addDataSource = useAddDataSource();
   const updateDataSource = useUpdateDataSource();
   const deleteDataSource = useDeleteDataSource();
+  const db = useDuckDB();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const editingSource = useDataSource(editingId ?? undefined);
   const deletingSource = useDataSource(deletingId ?? undefined);
+
+  const handleAddDataSource = async (name: string, file: File) => {
+    // Generate a unique ID for the data source
+    const id = `ds_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Upload the file (stores in IndexedDB and registers with DuckDB)
+    await uploadDataSource(db, file, name, id);
+
+    // Add the data source to the store
+    addDataSource(id, name);
+  };
 
   const handleSaveEdit = (id: string, newName: string) => {
     updateDataSource(id, { name: newName });
     setEditingId(null);
   };
 
-  const handleConfirmDelete = (id: string) => {
+  const handleConfirmDelete = async (id: string) => {
+    const dataSource = dataSources[id];
+    if (dataSource) {
+      // Delete from DuckDB and IndexedDB
+      await deleteDataSourceFromDB(db, id, dataSource.name);
+    }
+    // Remove from store
     deleteDataSource(id);
     setDeletingId(null);
   };
@@ -33,14 +58,7 @@ export function DataSourcesSection() {
     <div className="flex-1 flex flex-col mb-3">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-semibold">Data Sources</h2>
-        <AddItemDialog
-          title="Add Data Source"
-          description="Add a new data source to your workspace."
-          placeholder="Data source configuration will go here."
-          onAdd={() => {
-            // TODO: Implement add data source functionality
-          }}
-        />
+        <AddDataSourceDialog onAdd={handleAddDataSource} />
       </div>
       <ul className="space-y-0.5">
         {Object.entries(dataSources).map(([id, ds]) => (

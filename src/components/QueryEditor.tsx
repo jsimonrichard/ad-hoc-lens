@@ -7,6 +7,7 @@ import { sql } from "@codemirror/lang-sql";
 import { createTheme } from "@uiw/codemirror-themes";
 import { tags as t } from "@lezer/highlight";
 import { useMemo, useState, useEffect } from "react";
+import { useDuckDB } from "@/db";
 
 // Function to get CSS variable value
 function getCSSVariable(variable: string): string {
@@ -92,6 +93,7 @@ interface QueryEditorProps {
 export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
   const query = useQuery(queryId);
   const updateQuery = useUpdateQuery();
+  const db = useDuckDB();
   const [isDark, setIsDark] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -115,6 +117,34 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
   // Create theme that updates based on current CSS variables and theme
   const customTheme = useMemo(() => createCustomTheme(), [isDark]);
 
+  const handleRunQuery = async () => {
+    const queryContent = query?.content?.trim();
+    if (!queryContent) {
+      console.log("No query to run");
+      return;
+    }
+
+    try {
+      const conn = await db.connect();
+      try {
+        const result = await conn.query(queryContent);
+        // DuckDB-wasm returns Arrow tables. Use each row's toJSON() method
+        // to properly serialize all data types (dates, timestamps, etc.)
+        const arrowTable = result;
+        const resultArray = arrowTable.toArray();
+
+        // Use toJSON() on each row to properly serialize all DuckDB types
+        const serialized = resultArray.map((row: any) => row.toJSON());
+
+        console.log("Query result:", serialized);
+      } finally {
+        await conn.close();
+      }
+    } catch (error) {
+      console.error("Query execution error:", error);
+    }
+  };
+
   return (
     <TabsContent value={queryId} className="bg-background h-full flex flex-col">
       {/* Toolbar */}
@@ -131,9 +161,7 @@ export function QueryEditor({ queryId, onSave }: QueryEditorProps) {
         <Button
           variant="default"
           className="flex items-center gap-2"
-          onClick={() => {
-            // TODO: Implement run query functionality
-          }}
+          onClick={handleRunQuery}
         >
           <Play className="w-4 h-4" />
           Run
