@@ -1,6 +1,5 @@
 import * as duckdb from "@duckdb/duckdb-wasm";
-import React, { createContext, useContext, use, useMemo } from "react";
-import { storeFile, getAllFiles, deleteFile } from "./db/indexeddb.js";
+import { storeFile, getAllFiles, deleteFile } from "./indexeddb.js";
 
 const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
 
@@ -38,79 +37,6 @@ export async function initDuckDB() {
   return db;
 }
 
-interface DuckDBContextValue {
-  db: duckdb.AsyncDuckDB | null;
-}
-
-const DuckDBContext = createContext<DuckDBContextValue | null>(null);
-
-// Component that receives the promise and provides the context
-// This component will suspend until DB is ready
-export const DuckDBProvider: React.FC<{
-  children: React.ReactNode;
-  dbPromise: Promise<duckdb.AsyncDuckDB>;
-}> = ({ children, dbPromise }) => {
-  // Use the promise passed from parent - ensures exact same promise reference
-  const db = use(dbPromise);
-
-  // Use useMemo to stabilize the context value
-  const contextValue = React.useMemo(() => ({ db }), [db]);
-
-  return (
-    <DuckDBContext.Provider value={contextValue}>
-      {children}
-    </DuckDBContext.Provider>
-  );
-};
-
-// Holistic wrapper component that manages promise creation and Suspense
-export const DuckDBProviderWithSuspense: React.FC<{
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-}> = ({ children, fallback }) => {
-  // Create the promise once using useMemo - this component is above Suspense
-  // so it won't remount when Suspense triggers
-  const dbPromise = useMemo(() => {
-    return initDuckDB();
-  }, []);
-
-  return (
-    <React.Suspense
-      fallback={
-        fallback || (
-          <div className="flex h-screen items-center justify-center bg-background text-foreground">
-            <div className="text-center">
-              <div className="mb-4 text-lg">Loading Database...</div>
-            </div>
-          </div>
-        )
-      }
-    >
-      <DuckDBProvider dbPromise={dbPromise}>{children}</DuckDBProvider>
-    </React.Suspense>
-  );
-};
-
-/**
- * Hook to access DuckDB instance with Suspense support.
- * The provider handles Suspense, so this hook always returns the DB instance.
- * If called before DB is ready, the provider will have already suspended.
- */
-export function useDuckDB(): duckdb.AsyncDuckDB {
-  const context = useContext(DuckDBContext);
-  if (!context) {
-    throw new Error("useDuckDB must be used within a DuckDBProvider");
-  }
-
-  // If DB is ready, return it (provider ensures we only get here when ready)
-  if (context.db) {
-    return context.db;
-  }
-
-  // This should never happen because the provider suspends before rendering children
-  throw new Error("DuckDB is not initialized. This should not happen.");
-}
-
 /**
  * Register a file buffer with DuckDB and create a table from it.
  * @param db DuckDB instance
@@ -143,7 +69,7 @@ async function registerFileBufferAndCreateTable(
     switch (extension) {
       case "csv":
       case "tsv":
-      case "txt":
+      case "txt": {
         // For CSV/TSV files, use read_csv_auto
         const delim = extension === "tsv" ? "E'\\t'" : "','";
         createTableQuery = `
@@ -151,27 +77,32 @@ async function registerFileBufferAndCreateTable(
           SELECT * FROM read_csv('${escapedFileName}', delim=${delim})
         `;
         break;
+      }
       case "json":
-      case "jsonl":
+      case "jsonl": {
         // For JSON files, use read_json_auto
         createTableQuery = `
           CREATE TABLE ${escapedTableName} AS 
           SELECT * FROM read_json_auto('${escapedFileName}')
         `;
         break;
-      case "parquet":
+      }
+      case "parquet": {
         // For Parquet files, use read_parquet
         createTableQuery = `
           CREATE TABLE ${escapedTableName} AS 
           SELECT * FROM read_parquet('${escapedFileName}')
         `;
         break;
-      default:
+      }
+      default: {
         // Default to CSV for unknown extensions
         createTableQuery = `
           CREATE TABLE ${escapedTableName} AS 
           SELECT * FROM read_csv('${escapedFileName}')
         `;
+        break;
+      }
     }
 
     await conn.query(createTableQuery);

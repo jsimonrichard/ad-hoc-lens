@@ -9,7 +9,7 @@ import type { AppState } from "./types";
 import { loadState, STORAGE_KEY, demoState } from "./start";
 import { uploadDataSource } from "@/db";
 import { getAllFiles, deleteFile } from "@/db/indexeddb";
-import { sanitizeTableName } from "@/components/sidebar/AddDataSourceDialog";
+import { sanitizeTableName } from "@/utils/table-name";
 import type * as duckdb from "@duckdb/duckdb-wasm";
 
 export type { AppState, Query, DataSource } from "./types";
