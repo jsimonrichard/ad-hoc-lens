@@ -13,10 +13,12 @@ import {
   markFirstTimeAppOpenedComplete,
 } from "@/store/start";
 import { useLoadDemoState } from "@/store";
+import { useDuckDB } from "@/db";
 
 export function WelcomeDialog() {
   const [open, setOpen] = useState(false);
   const loadDemoState = useLoadDemoState();
+  const db = useDuckDB();
 
   // Check if this is the first time opening the app
   useEffect(() => {
@@ -25,8 +27,8 @@ export function WelcomeDialog() {
     }
   }, []);
 
-  const handleUseDemo = () => {
-    loadDemoState();
+  const handleUseDemo = async () => {
+    await loadDemoState(db);
     markFirstTimeAppOpenedComplete();
     setOpen(false);
   };
@@ -62,4 +64,3 @@ export function WelcomeDialog() {
     </Dialog>
   );
 }
-

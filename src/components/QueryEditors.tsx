@@ -19,7 +19,9 @@ export function QueryEditors() {
         setSaveQueryId(activeTab);
       }
     },
-    onReset: () => resetState(),
+    onReset: async () => {
+      await resetState();
+    },
   });
 
   const handleSaveClick = (queryId: string) => {

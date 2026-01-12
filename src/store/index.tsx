@@ -7,6 +7,10 @@ import React, {
 } from "react";
 import type { AppState } from "./types";
 import { loadState, STORAGE_KEY, demoState } from "./start";
+import { uploadDataSource } from "@/db";
+import { getAllFiles, deleteFile } from "@/db/indexeddb";
+import { sanitizeTableName } from "@/components/sidebar/AddDataSourceDialog";
+import type * as duckdb from "@duckdb/duckdb-wasm";
 
 export type { AppState, Query, DataSource } from "./types";
 
@@ -78,10 +82,22 @@ export function useStoreContext(): StoreContextValue {
 
 export function useResetState() {
   const { setState } = useStoreContext();
-  return useCallback(() => {
+  return useCallback(async () => {
     if (typeof window !== "undefined") {
+      // Clear IndexedDB files
+      try {
+        const files = await getAllFiles();
+        for (const file of files) {
+          await deleteFile(file.id);
+        }
+      } catch (error) {
+        console.error("Failed to clear IndexedDB:", error);
+      }
+
+      // Clear localStorage
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem("ad-hoc-lens-first-time");
+
       // Reload the page to show the welcome dialog again
       window.location.reload();
     } else {
@@ -92,7 +108,45 @@ export function useResetState() {
 
 export function useLoadDemoState() {
   const { setState } = useStoreContext();
-  return useCallback(() => {
-    setState({ ...demoState });
-  }, [setState]);
+
+  return useCallback(
+    async (db: duckdb.AsyncDuckDB) => {
+      try {
+        // Fetch the example dataset from the public folder
+        const response = await fetch("/rayon-rs__rayon_dataset.jsonl");
+        if (!response.ok) {
+          throw new Error("Failed to fetch demo dataset");
+        }
+
+        const blob = await response.blob();
+        const file = new File([blob], "rayon-rs__rayon_dataset.jsonl", {
+          type: "application/jsonl",
+        });
+
+        // Generate ID for the demo data source
+        const dataSourceId = "1";
+        // Sanitize the filename to create a valid table name
+        const rawName = "rayon-rs__rayon_dataset";
+        const dataSourceName = sanitizeTableName(rawName);
+
+        // Upload the file using the upload function
+        await uploadDataSource(db, file, dataSourceName, dataSourceId);
+
+        // Set the demo state (queries, etc.) - this will include the data source
+        // But we need to update it with the sanitized name
+        const updatedDemoState = {
+          ...demoState,
+          dataSources: {
+            "1": { name: dataSourceName },
+          },
+        };
+        setState(updatedDemoState);
+      } catch (error) {
+        console.error("Failed to load demo data:", error);
+        // Still set the demo state even if file upload fails
+        setState({ ...demoState });
+      }
+    },
+    [setState]
+  );
 }

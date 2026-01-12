@@ -15,37 +15,21 @@ export const defaultState: AppState = {
 export const demoState: AppState = {
   activeTab: "query1",
   queries: {
-    query1: {
-      name: "Untitled",
-      content: "",
-      saved: false,
-    },
     "saved-1": {
-      name: "Top 10 Records",
-      content: "SELECT * FROM data LIMIT 10",
+      name: "Select all",
+      content: "SELECT * FROM rayon_rs_rayon_dataset",
       saved: true,
     },
     "saved-2": {
-      name: "Aggregate Statistics",
-      content: "SELECT COUNT(*) as total, AVG(value) as avg_value FROM dataset",
-      saved: true,
-    },
-    "saved-3": {
-      name: "Filter by Date Range",
-      content:
-        "SELECT * FROM data WHERE date >= '2024-01-01' AND date <= '2024-12-31'",
-      saved: true,
-    },
-    "saved-4": {
-      name: "Group by Category",
-      content:
-        "SELECT category, COUNT(*) as count FROM items GROUP BY category ORDER BY count DESC",
+      name: "Markdown rendering",
+      content: `SELECT md('# ' || item.title), md(item.body) AS rendered
+          FROM rayon_rs_rayon_dataset, UNNEST(resolved_issues) AS t(item);`,
       saved: true,
     },
   },
-  openQueryIds: ["query1"],
+  openQueryIds: ["saved-1", "saved-2"],
   dataSources: {
-    "1": { name: "rayon_dataset.jsonl" },
+    "1": { name: "rayon_rs_rayon_dataset" },
   },
 };
 
