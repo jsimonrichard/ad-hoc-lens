@@ -3,7 +3,7 @@ import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { Sidebar } from "@/components/sidebar";
 import { QueryTabs } from "@/components/QueryTabs";
 import { useActiveTab } from "./store/queries";
-import { QueryEditors } from "./components/QueryEditors";
+import { QueryViews } from "./components/QueryViews";
 import { StoreProvider } from "./store";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DuckDBProviderWithSuspense } from "./db";
@@ -23,7 +23,7 @@ function AppContent() {
         >
           <QueryTabs />
           <div className="flex-1 overflow-auto">
-            <QueryEditors />
+            <QueryViews />
           </div>
         </Tabs>
         <WelcomeDialog />

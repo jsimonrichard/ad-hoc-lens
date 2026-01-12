@@ -85,7 +85,7 @@ export const DuckDBProviderWithSuspense: React.FC<{
         fallback || (
           <div className="flex h-screen items-center justify-center bg-background text-foreground">
             <div className="text-center">
-              <div className="mb-4 text-lg">Loading DuckDB...</div>
+              <div className="mb-4 text-lg">Loading Database...</div>
             </div>
           </div>
         )
@@ -100,15 +100,6 @@ export const DuckDBProviderWithSuspense: React.FC<{
  * Hook to access DuckDB instance with Suspense support.
  * The provider handles Suspense, so this hook always returns the DB instance.
  * If called before DB is ready, the provider will have already suspended.
- *
- * Usage with Suspense:
- * ```tsx
- * <Suspense fallback={<div>Loading DuckDB...</div>}>
- *   <DuckDBProvider>
- *     <YourComponent />
- *   </DuckDBProvider>
- * </Suspense>
- * ```
  */
 export function useDuckDB(): duckdb.AsyncDuckDB {
   const context = useContext(DuckDBContext);

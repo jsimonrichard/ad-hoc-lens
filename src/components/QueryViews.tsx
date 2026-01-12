@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SaveQueryDialog } from "./SaveQueryDialog";
 import { useActiveTab, useOpenQueryIds, useQueries } from "@/store/queries";
-import { QueryEditor } from "./QueryEditor";
+import { QueryView } from "./QueryView";
 import { useResetState } from "@/store";
 
-export function QueryEditors() {
+export function QueryViews() {
   const [activeTab] = useActiveTab();
   const openQueryIds = useOpenQueryIds();
   const queries = useQueries();
@@ -38,7 +38,7 @@ export function QueryEditors() {
   return (
     <>
       {openQueryIds.map((queryId) => (
-        <QueryEditor
+        <QueryView
           key={queryId}
           queryId={queryId}
           onSave={() => handleSaveClick(queryId)}
