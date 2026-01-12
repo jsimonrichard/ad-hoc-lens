@@ -145,10 +145,10 @@ async function registerFileBufferAndCreateTable(
       case "tsv":
       case "txt":
         // For CSV/TSV files, use read_csv_auto
-        const delimiter = extension === "tsv" ? "E'\\t'" : "','";
+        const delim = extension === "tsv" ? "E'\\t'" : "','";
         createTableQuery = `
           CREATE TABLE ${escapedTableName} AS 
-          SELECT * FROM read_csv_auto('${escapedFileName}', delimiter=${delimiter})
+          SELECT * FROM read_csv('${escapedFileName}', delim=${delim})
         `;
         break;
       case "json":
@@ -170,7 +170,7 @@ async function registerFileBufferAndCreateTable(
         // Default to CSV for unknown extensions
         createTableQuery = `
           CREATE TABLE ${escapedTableName} AS 
-          SELECT * FROM read_csv_auto('${escapedFileName}')
+          SELECT * FROM read_csv('${escapedFileName}')
         `;
     }
 
@@ -223,8 +223,14 @@ export async function uploadDataSource(
   // Store in IndexedDB first
   await storeFile(dataSourceId, file.name, name, fileBuffer);
 
-  // Register with DuckDB and create table
-  await registerFileBufferAndCreateTable(db, fileData, file.name, name);
+  try {
+    // Register with DuckDB and create table
+    await registerFileBufferAndCreateTable(db, fileData, file.name, name);
+  } catch (error) {
+    // If table creation fails, remove the file from IndexedDB
+    await deleteFile(dataSourceId);
+    throw error;
+  }
 }
 
 /**
