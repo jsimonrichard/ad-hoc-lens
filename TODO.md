@@ -3,5 +3,4 @@
 - Draggable layout
 - Better JSON viewer
 - Query builder option when selecting json / markdown fields
-- Add posthog analytics
 - Add link to github repo on page

@@ -1,5 +1,6 @@
 import { Tabs } from "@/components/ui/tabs";
 import { WelcomeDialog } from "@/components/WelcomeDialog";
+import { CookieBanner } from "@/components/CookieBanner";
 import { Sidebar } from "@/components/sidebar";
 import { QueryTabs } from "@/components/QueryTabs";
 import { useActiveTab } from "./store/queries";
@@ -27,6 +28,7 @@ function AppContent() {
           </div>
         </Tabs>
         <WelcomeDialog />
+        <CookieBanner />
       </main>
     </div>
   );
