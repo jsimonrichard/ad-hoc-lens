@@ -197,7 +197,7 @@ export function AddDataSourceDialog({ onAdd }: AddDataSourceDialogProps) {
                     or drag and drop
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    CSV, JSON, Parquet, TSV, TXT
+                    CSV, JSON(L), Parquet, TSV, TXT
                   </div>
                 </div>
               )}
