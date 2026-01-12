@@ -1,20 +1,38 @@
 import {
   useReactTable,
   getCoreRowModel,
+  getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { generateColumns } from "@/utils/table-columns";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 
 interface QueryTableProps {
-  data: any[];
+  data: Record<string, unknown>[];
   error: string | null;
   isRunning: boolean;
 }
 
 export function QueryTable({ data, error, isRunning }: QueryTableProps) {
-  const columns = useMemo<ColumnDef<any>[]>(
+  const [pageSize, setPageSize] = useState(50);
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(
     () => generateColumns(data),
     [data]
   );
@@ -23,7 +41,36 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    state: {
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
+    },
+    onPaginationChange: (updater) => {
+      if (typeof updater === "function") {
+        const currentState = table.getState().pagination;
+        const newState = updater(currentState);
+        setPageIndex(newState.pageIndex);
+        setPageSize(newState.pageSize);
+      } else {
+        setPageIndex(updater.pageIndex ?? pageIndex);
+        setPageSize(updater.pageSize ?? pageSize);
+      }
+    },
   });
+
+  // Reset to first page when data changes
+  useEffect(() => {
+    setPageIndex(0);
+  }, [data]);
+
+  // Generate page options for the dropdown
+  const pageOptions = useMemo(() => {
+    const totalPages = Math.ceil(data.length / pageSize) || 1;
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }, [data.length, pageSize]);
 
   return (
     <div className="flex flex-col h-full">
@@ -94,6 +141,104 @@ export function QueryTable({ data, error, isRunning }: QueryTableProps) {
           </div>
         )}
       </div>
+      {/* Pagination Controls */}
+      {data.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/30">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Rows per page:
+            </span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => {
+                const newPageSize = Number(value);
+                setPageSize(newPageSize);
+                setPageIndex(0);
+              }}
+            >
+              <SelectTrigger size="sm" className="w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="250">250</SelectItem>
+                <SelectItem value="500">500</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </span>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+                title="First page"
+              >
+                <ChevronsLeft className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                title="Previous page"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                title="Next page"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+                title="Last page"
+              >
+                <ChevronsRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Go to:</span>
+              <Select
+                value={String(pageIndex + 1)}
+                onValueChange={(value) => {
+                  const pageNumber = parseInt(value, 10);
+                  if (!isNaN(pageNumber)) {
+                    table.setPageIndex(pageNumber - 1);
+                  }
+                }}
+              >
+                <SelectTrigger size="sm" className="w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageOptions.map((pageNum) => (
+                    <SelectItem key={pageNum} value={String(pageNum)}>
+                      {pageNum}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

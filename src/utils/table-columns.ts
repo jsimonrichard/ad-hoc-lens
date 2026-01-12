@@ -2,7 +2,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { TableCell } from "@/components/QueryView/TableCell";
 
 // Generate columns dynamically based on query results
-export function generateColumns(queryResults: any[]): ColumnDef<any>[] {
+export function generateColumns(
+  queryResults: Record<string, unknown>[]
+): ColumnDef<Record<string, unknown>>[] {
   if (queryResults.length === 0) return [];
 
   // Get all unique keys from all rows
@@ -20,7 +22,7 @@ export function generateColumns(queryResults: any[]): ColumnDef<any>[] {
     // or are formatted in ways that don't work reliably with TanStack Table's accessorKey.
     // By using accessorFn, we directly access the value from the row object, bypassing
     // any potential key matching issues.
-    accessorFn: (row: any) => row[key],
+    accessorFn: (row: Record<string, unknown>) => row[key],
     header: key,
     cell: TableCell,
   }));
