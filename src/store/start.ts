@@ -29,7 +29,7 @@ export const demoState: AppState = {
   },
   openQueryIds: ["saved-1", "saved-2"],
   dataSources: {
-    "1": { name: "rayon_rs_rayon_dataset" },
+    "1": { type: "regular", name: "rayon_rs_rayon_dataset" },
   },
 };
 

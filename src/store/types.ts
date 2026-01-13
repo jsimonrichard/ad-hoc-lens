@@ -1,6 +1,14 @@
-export interface DataSource {
-  name: string;
-}
+export type DataSource =
+  | {
+      type: "regular";
+      name: string;
+    }
+  | {
+      type: "sqlite";
+      name: string;
+      tables: string[];
+      schemaName: string;
+    };
 
 export interface Query {
   name: string;

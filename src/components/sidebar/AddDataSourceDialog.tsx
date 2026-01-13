@@ -127,7 +127,7 @@ export function AddDataSourceDialog({ onAdd }: AddDataSourceDialogProps) {
           <DialogTitle>Add Data Source</DialogTitle>
           <DialogDescription>
             Upload a file to add as a data source. Supported formats: CSV, JSON,
-            Parquet, and more.
+            Parquet, SQLite, and more.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -152,7 +152,7 @@ export function AddDataSourceDialog({ onAdd }: AddDataSourceDialogProps) {
                 id="file-input"
                 type="file"
                 className="hidden"
-                accept=".csv,.json,.jsonl,.parquet,.tsv,.txt"
+                accept=".csv,.json,.jsonl,.parquet,.tsv,.txt,.db,.sqlite,.sqlite3"
                 onChange={handleFileInputChange}
               />
               {file ? (
@@ -184,7 +184,7 @@ export function AddDataSourceDialog({ onAdd }: AddDataSourceDialogProps) {
                     or drag and drop
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    CSV, JSON(L), Parquet, TSV, TXT
+                    CSV, JSON(L), Parquet, SQLite, TSV, TXT
                   </div>
                 </div>
               )}

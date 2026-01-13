@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DataSourceButton } from "@/components/sidebar/DataSourceButton";
+import { SQLiteDataSourceButton } from "@/components/sidebar/SQLiteDataSourceButton";
 import { AddDataSourceDialog } from "@/components/sidebar/AddDataSourceDialog";
 import { EditItemDialog } from "@/components/sidebar/EditItemDialog";
 import { ConfirmDeleteDialog } from "@/components/sidebar/ConfirmDeleteDialog";
@@ -34,10 +35,16 @@ export function DataSourcesSection() {
     const id = `ds_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Upload the file (stores in IndexedDB and registers with DuckDB)
-    await uploadDataSource(db, file, name, id);
+    const metadata = await uploadDataSource(db, file, name, id);
 
-    // Add the data source to the store
-    addDataSource(id, name);
+    // Add the data source to the store with metadata
+    addDataSource(id, name, metadata);
+  };
+
+  const handleSQLiteTableClick = (schemaName: string, tableName: string) => {
+    // For SQLite tables, use schema.table format
+    const fullTableName = `"${schemaName}"."${tableName}"`;
+    openOrCreateDataSourceQuery(fullTableName);
   };
 
   const handleSaveEdit = (id: string, newName: string) => {
@@ -63,16 +70,32 @@ export function DataSourcesSection() {
         <AddDataSourceDialog onAdd={handleAddDataSource} />
       </div>
       <ul className="space-y-0.5">
-        {Object.entries(dataSources).map(([id, ds]) => (
-          <DataSourceButton
-            key={id}
-            id={id}
-            name={ds.name}
-            onEdit={() => setEditingId(id)}
-            onDelete={() => setDeletingId(id)}
-            onClick={() => openOrCreateDataSourceQuery(ds.name)}
-          />
-        ))}
+        {Object.entries(dataSources).map(([id, ds]) => {
+          if (ds.type === "sqlite") {
+            return (
+              <SQLiteDataSourceButton
+                key={id}
+                id={id}
+                name={ds.name}
+                tables={ds.tables}
+                schemaName={ds.schemaName}
+                onEdit={() => setEditingId(id)}
+                onDelete={() => setDeletingId(id)}
+                onTableClick={handleSQLiteTableClick}
+              />
+            );
+          }
+          return (
+            <DataSourceButton
+              key={id}
+              id={id}
+              name={ds.name}
+              onEdit={() => setEditingId(id)}
+              onDelete={() => setDeletingId(id)}
+              onClick={() => openOrCreateDataSourceQuery(ds.name)}
+            />
+          );
+        })}
       </ul>
       <EditItemDialog
         open={editingId !== null}

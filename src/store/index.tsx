@@ -134,10 +134,10 @@ export function useLoadDemoState() {
 
         // Set the demo state (queries, etc.) - this will include the data source
         // But we need to update it with the sanitized name
-        const updatedDemoState = {
+        const updatedDemoState: AppState = {
           ...demoState,
           dataSources: {
-            "1": { name: dataSourceName },
+            "1": { type: "regular" as const, name: dataSourceName },
           },
         };
         setState(updatedDemoState);
