@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_redirect import redirect
 
 if __name__ == "__main__":
-    redirect("https://ad-hoc-lens.dev")
+    st.html("The project has moved to <a href='https://ad-hoc-lens.dev' target='_blank'>https://ad-hoc-lens.dev</a>")
